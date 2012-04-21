@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 
 #http://stackoverflow.com/questions/4159331/python-speed-up-an-a-star-pathfinding-algorithm
-def aStar(current, end):
+def aStar(current, end, mover):
 
     openSet = set()
     openHeap = []
@@ -65,6 +65,8 @@ def aStar(current, end):
                 while cc.parent is not None:
                     if cc.character in terrainCosts:
                         terrainCost += terrainCosts[cc.character]
+                    if 'tower' in cc.effects:
+                        terrainCost += mover.tower_avoidance
                     cc = cc.parent
                 tile.H += terrainCost
 
@@ -83,6 +85,9 @@ class Baddie(object):
         self.y = y
         self.health = 3
         self.move_delay = 2
+
+        self.tower_avoidance = random.randint(0,4)
+        
         self.dead = False
 
     def set_path(self, path):
@@ -90,6 +95,7 @@ class Baddie(object):
         self.path = path[:]
         for tile in path:
             tile.in_path_of.add(self)
+            tile.highlights.add('pathfinding')
 
     def move(self):
         if self.dead:
@@ -106,7 +112,7 @@ class Baddie(object):
         leaving.baddies.discard(self)
 
         if len(self.path) <= 1:
-            log.debug("got there!")
+            log.debug("got to the target with %r hp", self.health)
             all_baddies.discard(self)
             return
 
@@ -140,11 +146,9 @@ def on_input(key):
         start = world.get_at(b.x, b.y)
         start.baddies.add(b)
         paths = []
-        for target, highlight in ((world.north_pole, 'pathing_north'), (world.south_pole, 'pathing_south')):
-            path = aStar(start, target)
+        for target in (world.north_pole, world.south_pole):
+            path = aStar(start, target, b)
             paths.append((len(path), path))
-            for tile in path:
-                tile.highlights.add(highlight)
 
         #head down the shorter path
         b.set_path(sorted(paths)[0][1])

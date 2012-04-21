@@ -13,8 +13,8 @@ Hill = '\xb0'
 Mountain = '\xb1'
 
 highlight_colors = dict(
-    pathing_north=colors.MAGENTA,
-    pathing_south=colors.CYAN
+    pathfinding=colors.MAGENTA,
+    tower=colors.GREEN
 )
 map_width = 60
 map_height = 60
@@ -23,6 +23,9 @@ view_width = map_width
 view_height = map_height
 view_x = 0
 view_y = 0
+
+def cursor_pos():
+    return clamp_width(view_x + (view_width/2)), clamp_height(view_y + (view_height/2))
 
 def clamp_width(value):
     while value < 0:
@@ -73,25 +76,27 @@ class Cell(object):
 
     def reset_effects(self):
         self.effects = set()
+        if not self.in_path_of:
+            self.highlights.discard('pathfinding')
 
     def add_effects(self):
         if self.tower:
             for neighbor in self.in_range(self.tower.range):
                 neighbor.effects.add(self.tower.effect)
+                neighbor.highlights.add('tower')
 
     def calculate_image(self, viewmode=None):
         character = self.character
         fg = self.fg
         bg = self.bg
 
-        if game.highlight_mode in self.highlights:
-            bg = highlight_colors[game.highlight_mode]
-        elif 'northpole' in self.effects:
+        for highlight in game.highlights:
+            if highlight in self.highlights:
+                bg = highlight_colors[highlight]
+        if 'northpole' in self.effects:
             bg = colors.RED
         elif 'southpole' in self.effects:
             bg = colors.BLUE
-        elif 'tower' in self.effects:
-            bg = colors.GREEN
 
         if self.tower:
             fg = self.tower.fg
@@ -99,7 +104,7 @@ class Cell(object):
             character = 'T'
 
         elif len(self.baddies):
-            character = 'B'
+            character = 'E'
 
         
         self.cell[0] = fg
@@ -239,14 +244,6 @@ def on_input(key):
 
         view_x = clamp_width(view_x)
         view_y = clamp_height(view_y)
-
-    if key in ('n', 's', 'c'):
-        if key == 'n':
-            game.highlight_mode = 'pathing_north'
-        elif key == 's':
-            game.highlight_mode = 'pathing_south'
-        else:
-            clear_highlight()
 
 @event.on('game.predraw')
 def on_tick():

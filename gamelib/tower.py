@@ -1,5 +1,6 @@
 import pytality
 
+import game
 import event
 import world
 import random
@@ -28,7 +29,7 @@ class Tower(object):
         for neighbor in cell.in_range(self.range):
             if neighbor.baddies:
                 target = list(neighbor.baddies)[0]
-                log.debug("%r firing at %r", self, target)
+                log.debug("%r firing at %r on tick %r", self, target, game.ticks)
                 self.fg = pytality.colors.LIGHTGREEN
                 target.take_damage(1)
                 self.fire_delay = 4
@@ -39,8 +40,8 @@ all_towers = set()
 @event.on('game.input')
 def on_input(key):
     if key == 'T':
-
-        t = Tower(x=random.randint(0, world.map_width), y=random.randint(0, world.map_height))
+        x,y = world.cursor_pos()
+        t = Tower(x=x, y=y)
         start = world.get_at(t.x, t.y)
         start.tower = t
         all_towers.add(t)

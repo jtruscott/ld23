@@ -7,7 +7,7 @@ import logging
 log = logging.getLogger(__name__)
 
 screen_width = 100
-screen_height = 80
+screen_height = 70
 
 def main():
     pytality.term.init(width=screen_width, height=screen_height)

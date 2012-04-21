@@ -17,7 +17,10 @@ class GameShutdown(Exception):
 mode = "game"
 active_panel = "map"
 
-highlight_mode = "pathing_north"
+highlights = set(["tower"])
+
+fps = 10
+ticks = 0
 
 def start():
     log.debug("Game starting")
@@ -43,12 +46,16 @@ def run(event_name, *args):
         pytality.term.flip()
     
 def tick():
+    global ticks
+    delay = 1.0/fps
     try:
         log.debug("Tick thread started")
         time.sleep(1)
         while True:
-            goal = time.time() + 0.1
+            goal = time.time() + delay
             run('tick')
+            ticks += 1
+
             sleeping_for = goal - time.time()
             if sleeping_for < 0.01:
                 log.debug("uhoh, lagging, sleeping_for was %r", sleeping_for)
