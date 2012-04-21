@@ -54,12 +54,19 @@ class Cell(object):
         self.character = character
         self.fg = fg
         self.bg = bg
-        self.baddies = []
+        self.baddies = set()
 
         #mutable on purpose
         self.cell = [fg, bg, character]
+
+        #what effects are going on? (must be recalculatable)
         self.effects = set()
+
+        #what snazzy things do we want to show?
         self.highlights = set()
+
+        #who's pathing through us? (in case we change)
+        self.in_path_of = set()
 
     def reset_effects(self):
         self.effects = set()
@@ -158,8 +165,7 @@ def clear_highlight(type=None):
             cell.highlights.clear()
     else:
         for cell in all_cells():
-            if type in cell.highlights:
-                cell.highlights.remove(type)
+            cell.highlights.discard(type)
 
 def update_map_buffer():
     log.debug("update_map_buffer: view_x=%r, view_y=%r", view_x, view_y)
@@ -194,11 +200,7 @@ north_pole = map[0][0] = Pole('northpole', x=0, y=0, character='P')
 south_pole = map[map_height/2][map_width/2] = Pole('southpole', x=map_width/2, y=map_height/2, character='P')
 
 map_buffer = pytality.buffer.Buffer(width=view_width, height=view_height)
-update_map()
-update_map_buffer()
-
     
-
 @event.on('game.input')
 def on_input(key):
     global view_x, view_y
@@ -217,8 +219,6 @@ def on_input(key):
         view_x = clamp_width(view_x)
         view_y = clamp_height(view_y)
 
-        update_map_buffer()
-
     if key in ('n', 's', 'c'):
         if key == 'n':
             game.highlight_mode = 'pathing_north'
@@ -226,8 +226,13 @@ def on_input(key):
             game.highlight_mode = 'pathing_south'
         else:
             clear_highlight()
-        update_map()
-        update_map_buffer()
 
     if key == 'R':
         update_map()
+
+
+@event.on('game.predraw')
+def on_tick():
+    
+    update_map()
+    update_map_buffer()

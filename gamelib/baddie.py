@@ -74,24 +74,54 @@ def aStar(current, end):
     return []
 
 
+all_baddies = set()
+
 class Baddie(object):
     def __init__(self, x, y):
         self.x = x
         self.y = y
 
+    def set_path(self, path):
+        self.full_path = path
+        self.path = path[:]
+        for tile in path:
+            tile.in_path_of.add(self)
+
+    def move(self):
+        leaving = self.path.pop(0)
+        leaving.in_path_of.discard(self)
+        leaving.baddies.discard(self)
+
+        if len(self.path) == 1:
+            log.debug("got there!")
+            all_baddies.discard(self)
+            return
+
+        current = self.path[0]
+        current.baddies.add(self)
+        
+
 @event.on('game.input')
 def on_input(key):
     if key == 'B':
         b = Baddie(x=random.randint(0, world.map_width), y=random.randint(0, world.map_height))
-        start = world.get_at(b.x, b.y)
-        start.baddies = [b]
-        for tile in aStar(start, world.north_pole):
-            tile.highlights.add('pathing_north')
-            tile.calculate_image()
         
-        for tile in aStar(start, world.south_pole):
-            tile.highlights.add('pathing_south')
-            tile.calculate_image()
+        start = world.get_at(b.x, b.y)
+        start.baddies.add(b)
+        paths = []
+        for target, highlight in ((world.north_pole, 'pathing_north'), (world.south_pole, 'pathing_south')):
+            path = aStar(start, target)
+            paths.append((len(path), path))
+            for tile in path:
+                tile.highlights.add(highlight)
 
-        world.update_map()
-        world.update_map_buffer()
+        #head down the shorter path
+        b.set_path(sorted(paths)[0][1])
+        
+        all_baddies.add(b)
+        
+@event.on('game.tick')
+def on_tick():
+    #can't mutate during iteration
+    for baddie in list(all_baddies):
+        baddie.move()

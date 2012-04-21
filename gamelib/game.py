@@ -36,11 +36,14 @@ def run(event_name, *args):
     global mode
     with logic_lock:
         event.fire('%s.%s' % (mode, event_name), *args)
+        event.fire('%s.predraw' % mode)
         event.fire('%s.draw' % mode)
         pytality.term.flip()
     
 def tick():
     log.debug("Tick thread started")
+    time.sleep(1)
     while True:
-        time.sleep(1)
+        goal = time.time() + 0.5
         run('tick')
+        time.sleep(max(0.1, goal - time.time()))
