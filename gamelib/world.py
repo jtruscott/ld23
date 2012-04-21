@@ -160,11 +160,19 @@ def prettify_map(iterations):
             for x in range(map_width):
                 cell = map[y][x]
                 n,e,w,s = cell.neighbors()
-                if(n.character == e.character == w.character == s.character) and n.character != cell.character:
+                
+                #poles want to be flat ground
+                #sometimes this makes them struggle against mountains, oh well
+                if cell.character == 'P':
+                    for neighbor in cell.in_range(2):
+                        if neighbor.character in (Plain, Hill, Mountain):
+                            neighbor.character = Plain
+
+                elif(n.character == e.character == w.character == s.character) and n.character != cell.character and cell.character in (Plain, Hill, Mountain):
                     #log.debug("prettify, iteration %i, changing cell to %r", iteration, n.character)
                     cell.character = n.character
 
-                if cell.character == Mountain:
+                elif cell.character == Mountain:
                     for c in (n,e,w,s):
                         if c.character == Plain:
                             #log.debug("prettify, iteration %i, changing cell to Hill", iteration)
@@ -217,10 +225,11 @@ map = [
     for y in range(map_height)
 ]
 
-prettify_map(3)
 
 north_pole = map[0][0] = Pole('northpole', x=0, y=0, character='P')
 south_pole = map[map_height/2][map_width/2] = Pole('southpole', x=map_width/2, y=map_height/2, character='P')
+
+prettify_map(3)
 
 map_buffer = pytality.buffer.Buffer(width=view_width, height=view_height)
     

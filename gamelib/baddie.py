@@ -18,8 +18,8 @@ def aStar(current, end, mover):
     #super arbitrary
     terrainCosts = {
         world.Plain: 0,
-        world.Hill: 3,
-        world.Mountain: 8
+        world.Hill: 5,
+        world.Mountain: 10
     }
 
     #cutoff the path ends
@@ -67,7 +67,11 @@ def aStar(current, end, mover):
                         terrainCost += terrainCosts[cc.character]
                     if 'tower' in cc.effects:
                         terrainCost += mover.tower_avoidance
+                    if cc.tower:
+                        #don't go over towers, but don't call them full on walls
+                        terrainCost += 1000
                     cc = cc.parent
+                    
                 tile.H += terrainCost
 
                 if tile not in openSet:
