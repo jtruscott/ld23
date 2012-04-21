@@ -65,7 +65,11 @@ map_panel = make_panel('map', x=left_panel.width, width=world.view_width, height
 highlight_panel = make_panel('highlight', x=left_panel.width, y=map_panel.height, height=main.screen_height - map_panel.height-2, width=map_panel.width-2, core=highlight_buffer, title="Highlighting")
 bottom_panel = make_panel('bottom', y=left_panel.height, width=bottom_buffer.width, height=bottom_buffer.height, core=bottom_buffer, title="Current Cell")
 
-info_text = pytality.buffer.RichText("%s", x=1, y=5, wrap_to=bottom_buffer.width-1)
+info_text = pytality.buffer.RichText("%s", x=1, y=1, wrap_to=info_buffer.width-1)
+
+message_log = pytality.buffer.MessageBox(draw_top=None, draw_left=None, draw_bottom=None, draw_right=None, x=0, y=left_panel.height-18, width=info_buffer.width, height=16)
+message_title = pytality.buffer.PlainText('Messages:', x=0,y=message_log.y)
+message_log.scroll_cursor = pytality.buffer.NoScrollbar()
 
 cell_special_text = pytality.buffer.RichText("%s", x=1, y=1, wrap_to=bottom_buffer.width-1)
 cell_terrain_text = pytality.buffer.RichText("<DARKGREY>Terrain Type: %s</>", x=1, y=3, wrap_to=bottom_buffer.width-1)
@@ -74,11 +78,22 @@ cell_tower_info = pytality.buffer.RichText("%s", x=1, y=7, wrap_to=bottom_buffer
 
 status_bar = pytality.buffer.PlainText("X: %-4i    Y: %-4i    Time: %s", y=bottom_panel.height-3, x=bottom_panel.width-37)
 
+@event.on('error')
+def on_error(msg):
+    message_log.add('<RED>%s</>' % msg)
+
+@event.on('message')
+def on_error(msg):
+    message_log.add(msg)
+
 @event.on('setup')
 def on_setup():
     info_buffer.children = [
-        info_text
+        info_text,
+        message_log,
+        message_title,
     ]
+    message_log.add("Game started")
 
     bottom_buffer.children = [
         cell_special_text,

@@ -83,6 +83,9 @@ class Cell(object):
         #is there a tower here?
         self.tower = None
 
+        #what about a lander?
+        self.lander = None
+
     def reset_effects(self):
         self.buildable = True
         self.effects = set()
@@ -116,6 +119,7 @@ class Cell(object):
             character = 'T'
 
         elif len(self.baddies):
+            fg = colors.LIGHTCYAN
             character = 'E'
 
         

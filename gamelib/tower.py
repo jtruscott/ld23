@@ -41,13 +41,16 @@ class Tower(object):
                 target = list(neighbor.baddies)[0]
                 log.debug("%r firing at %r on tick %r", self, target, game.ticks)
                 self.fg = pytality.colors.LIGHTGREEN
-                target.take_damage(self.damage)
+                killed = target.take_damage(self.damage)
+                if killed:
+                    self.kills += 1
+
                 self.fire_delay = self.cooldown
                 break
 
 class BasicTower(Tower):
     name = "Basic Tower"
-    base_cooldown = 7
+    base_cooldown = 5
     base_range = 2
     base_damage = 2
     base_cost = 50
@@ -55,8 +58,8 @@ class BasicTower(Tower):
 
 class LongRangeTower(Tower):
     name = "Long Range Tower"
-    base_cooldown = 10
-    base_range = 5
+    base_cooldown = 5
+    base_range = 6
     base_damage = 1
     base_cost = 75
 
@@ -68,7 +71,7 @@ def on_input(key):
         x,y = world.cursor_pos()
         start = world.get_at(x, y)
         if start.tower:
-            event.fire("error", "can't build there")
+            event.fire("error", "Cannot construct tower: Cell already has a tower")
             return
 
         if key == 'T':
@@ -77,7 +80,10 @@ def on_input(key):
             tower_type = LongRangeTower
 
         if game.money < tower_type.base_cost:
-            event.fire("error", "can't afford that")
+            event.fire("error", "Cannot construct tower: Insufficient resources")
+            return
+        if not start.buildable:
+            event.fire("error", "Cannot construct tower: Cell is not buildable")
             return
 
         game.money -= tower_type.base_cost
@@ -91,7 +97,7 @@ def on_input(key):
 def on_tick():
     if game.ticks % 10 == 0:
         game.money += 1
-        
+
     #can't mutate during iteration
     for tower in list(all_towers):
         tower.tick()
