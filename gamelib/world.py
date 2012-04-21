@@ -3,39 +3,112 @@ import logging
 import pytality
 import game
 import random
+import math
+
+colors = pytality.colors
 
 log = logging.getLogger(__name__)
 
+map_width = 60
+map_height = 60
+
+view_width = map_width
+view_height = map_height
+view_x = 0
+view_y = 0
+
+def clamp_width(value):
+    while value < 0:
+        value += map_width
+    while value >= map_width:
+        value -= map_width
+    return value
+
+def clamp_height(value):
+    while value < 0:
+        value += map_height
+    while value >= map_height:
+        value -= map_height
+    return value
+
 class Cell(object):
-    def __init__(self, x, y, character=' ', fg=pytality.colors.LIGHTGREY, bg=pytality.colors.BLACK):
+    def __init__(self, x, y, character=' ', fg=colors.LIGHTGREY, bg=colors.BLACK):
         self.x = x
         self.y = y
 
         self.character = character
-        if x == 0 and y == 0:
-            bg=pytality.colors.MAGENTA
         self.fg = fg
         self.bg = bg
+
         #mutable on purpose
         self.cell = [fg, bg, character]
+        self.effects = set()
 
-map_width = 40
-map_height = 40
+    def reset_effects(self):
+        self.effects = set()
+
+    def add_effects(self):
+        pass
+
+    def calculate_image(self, viewmode=None):
+        if 'northpole' in self.effects:
+            self.cell[1] = colors.RED
+        elif 'southpole' in self.effects:
+            self.cell[1] = colors.BLUE
+        else:
+            self.cell[1] = self.bg
+
+    def in_range(self, radius):
+        for y in range(-radius, radius+1):
+            for x in range(-radius, radius+1):
+                if math.sqrt(y**2 + x**2) > radius+0.5:
+                    continue
+                abs_y = clamp_height(y + self.y)
+                abs_x = clamp_width(x + self.x)
+                log.debug('radius: %r, %r', abs_x, abs_y)
+                yield map[abs_y][abs_x]
+
+class Pole(Cell):
+    def __init__(self, ns, **kwargs):
+        self.ns = ns
+        if ns == 'northpole':
+            kwargs['bg'] = colors.LIGHTRED
+        else:
+            kwargs['bg'] = colors.LIGHTBLUE
+
+        Cell.__init__(self, **kwargs)
+
+    def add_effects(self):
+        for neighbor in self.in_range(2):
+            neighbor.effects.add(self.ns)
+
 
 map = [
     [
-        Cell(x=x, y=y, character=random.choice([' ']*4 + ['\xb0']*3 + ['\xb1']))
-        for x in range(map_height)
+        Cell(x=x, y=y, character=random.choice([' ']*6 + ['\xb0']*4 + ['\xb1']))
+        for x in range(map_width)
     ]
-    for y in range(map_width)
+    for y in range(map_height)
 ]
-
-view_width = map_width+10
-view_height = map_height+10
-view_x = 0
-view_y = 0
+map[0][0] = Pole('northpole', x=0, y=0, character='P')
+map[map_height/2][map_width/2] = Pole('southpole', x=map_width/2, y=map_height/2, character='P')
 
 map_buffer = pytality.buffer.Buffer(width=view_width, height=view_height)
+
+def update_map():
+    #three passes!
+    #this is kinda silly but i'd rather not have bugs from being smart
+    for col in map:
+        for cell in col:
+            cell.reset_effects()
+
+    for col in map:
+        for cell in col:
+            cell.add_effects()
+
+    for col in map:
+        for cell in col:
+            cell.calculate_image()
 
 def update_map_buffer():
     log.debug("update_map_buffer: view_x=%r, view_y=%r", view_x, view_y)
@@ -43,20 +116,8 @@ def update_map_buffer():
     for y in range(view_height):
         row = []
         for x in range(view_width):
-            abs_x = view_x + x
-            abs_y = view_y + y
-            while abs_x < 0:
-                abs_x += map_width
-            while abs_x >= map_width:
-                abs_x -= map_width
-
-            while abs_y < 0:
-                abs_y += map_height
-            while abs_y >= map_height:
-                abs_y -= map_height
-
-            #log.debug("display (%r, %r) -> map (%r, %r)", x, y, abs_x, abs_y)
-
+            abs_x = clamp_width(view_x + x)
+            abs_y = clamp_height(view_y + y)
             cell = map[abs_y][abs_x]
 
             row.append(cell.cell)
@@ -66,12 +127,13 @@ def update_map_buffer():
     map_buffer.dirty = True
 
     #log.debug("map buffer: %r", map_buffer._data)
-
-    
+update_map()
 update_map_buffer()
 
+    
+
 @event.on('game.input')
-def world_input(key):
+def on_input(key):
     global view_x, view_y
 
     if key in ('left', 'right', 'up', 'down'):
@@ -85,4 +147,10 @@ def world_input(key):
         if key == 'down':
             view_y += 1
 
-    update_map_buffer()
+        view_x = clamp_width(view_x)
+        view_y = clamp_height(view_y)
+
+        update_map_buffer()
+
+    if key == 'R':
+        update_map()
