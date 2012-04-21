@@ -4,6 +4,8 @@ import logging
 import threading
 import time
 import pytality
+import os, sys
+import traceback
 
 logic_lock = threading.Lock()
 
@@ -41,9 +43,21 @@ def run(event_name, *args):
         pytality.term.flip()
     
 def tick():
-    log.debug("Tick thread started")
-    time.sleep(1)
-    while True:
-        goal = time.time() + 0.5
-        run('tick')
-        time.sleep(max(0.1, goal - time.time()))
+    try:
+        log.debug("Tick thread started")
+        time.sleep(1)
+        while True:
+            goal = time.time() + 0.1
+            run('tick')
+            sleeping_for = goal - time.time()
+            if sleeping_for < 0.01:
+                log.debug("uhoh, lagging, sleeping_for was %r", sleeping_for)
+                sleeping_for = 0.01
+            time.sleep(sleeping_for)
+
+    except Exception as e:
+        logging.exception(e)
+        try:
+            traceback.print_exc(e, file=sys.stderr)
+        finally:
+            os._exit(1)

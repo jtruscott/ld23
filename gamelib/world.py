@@ -68,28 +68,44 @@ class Cell(object):
         #who's pathing through us? (in case we change)
         self.in_path_of = set()
 
+        #is there a tower here?
+        self.tower = None
+
     def reset_effects(self):
         self.effects = set()
 
     def add_effects(self):
-        pass
+        if self.tower:
+            for neighbor in self.in_range(self.tower.range):
+                neighbor.effects.add(self.tower.effect)
 
     def calculate_image(self, viewmode=None):
-        self.cell[0] = self.fg
+        character = self.character
+        fg = self.fg
+        bg = self.bg
 
         if game.highlight_mode in self.highlights:
-            self.cell[1] = highlight_colors[game.highlight_mode]
+            bg = highlight_colors[game.highlight_mode]
         elif 'northpole' in self.effects:
-            self.cell[1] = colors.RED
+            bg = colors.RED
         elif 'southpole' in self.effects:
-            self.cell[1] = colors.BLUE
-        else:
-            self.cell[1] = self.bg
+            bg = colors.BLUE
+        elif 'tower' in self.effects:
+            bg = colors.GREEN
 
-        if len(self.baddies):
-            self.cell[2] = 'B'
-        else:
-            self.cell[2] = self.character
+        if self.tower:
+            fg = self.tower.fg
+            bg = colors.GREEN
+            character = 'T'
+
+        elif len(self.baddies):
+            character = 'B'
+
+        
+        self.cell[0] = fg
+        self.cell[1] = bg
+        self.cell[2] = character
+
 
     def in_range(self, radius):
         for y in range(-radius, radius+1):
@@ -113,6 +129,8 @@ class Pole(Cell):
             kwargs['bg'] = colors.LIGHTRED
         else:
             kwargs['bg'] = colors.LIGHTBLUE
+
+        kwargs['fg'] = colors.WHITE
 
         Cell.__init__(self, **kwargs)
 
@@ -168,7 +186,7 @@ def clear_highlight(type=None):
             cell.highlights.discard(type)
 
 def update_map_buffer():
-    log.debug("update_map_buffer: view_x=%r, view_y=%r", view_x, view_y)
+    #log.debug("update_map_buffer: view_x=%r, view_y=%r", view_x, view_y)
     rows = []
     for y in range(view_height):
         row = []
@@ -205,6 +223,9 @@ map_buffer = pytality.buffer.Buffer(width=view_width, height=view_height)
 def on_input(key):
     global view_x, view_y
 
+    if game.active_panel != 'map':
+        return
+
     if key in ('left', 'right', 'up', 'down'):
         log.debug("moving offsets")
         if key == 'left':
@@ -226,10 +247,6 @@ def on_input(key):
             game.highlight_mode = 'pathing_south'
         else:
             clear_highlight()
-
-    if key == 'R':
-        update_map()
-
 
 @event.on('game.predraw')
 def on_tick():

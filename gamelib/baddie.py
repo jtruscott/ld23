@@ -77,9 +77,13 @@ def aStar(current, end):
 all_baddies = set()
 
 class Baddie(object):
+    speed = 2
     def __init__(self, x, y):
         self.x = x
         self.y = y
+        self.health = 3
+        self.move_delay = 2
+        self.dead = False
 
     def set_path(self, path):
         self.full_path = path
@@ -88,17 +92,44 @@ class Baddie(object):
             tile.in_path_of.add(self)
 
     def move(self):
+        if self.dead:
+            return
+
+        self.move_delay -= 1
+        if self.move_delay > 0: 
+            return
+
+        self.move_delay = self.speed
+
         leaving = self.path.pop(0)
         leaving.in_path_of.discard(self)
         leaving.baddies.discard(self)
 
-        if len(self.path) == 1:
+        if len(self.path) <= 1:
             log.debug("got there!")
             all_baddies.discard(self)
             return
 
         current = self.path[0]
         current.baddies.add(self)
+
+    def take_damage(self, amount):
+        if self.dead:
+            return
+
+        self.health -= amount
+        if self.health <= 0:
+            log.debug("%r was killed by %r damage", self, amount)
+            #dead!
+            self.dead = True
+
+            #cleanup our pathing
+            self.path[0].baddies.discard(self)
+            for tile in self.path:
+                tile.in_path_of.discard(self)
+
+            self.full_path = self.path = None
+            all_baddies.discard(self)
         
 
 @event.on('game.input')
