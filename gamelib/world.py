@@ -31,6 +31,14 @@ def clamp_height(value):
         value -= map_height
     return value
 
+def get_at(x, y):
+    if y < 0 or y >= map_height:
+        y = clamp_height(y)
+    if x < 0 or x >= map_width:
+        x = clamp_width(x)
+    return map[y][x]
+
+
 class Cell(object):
     def __init__(self, x, y, character=' ', fg=colors.LIGHTGREY, bg=colors.BLACK):
         self.x = x
@@ -51,12 +59,16 @@ class Cell(object):
         pass
 
     def calculate_image(self, viewmode=None):
+        self.cell[0] = self.fg
+
         if 'northpole' in self.effects:
             self.cell[1] = colors.RED
         elif 'southpole' in self.effects:
             self.cell[1] = colors.BLUE
         else:
             self.cell[1] = self.bg
+
+        self.cell[2] = self.character
 
     def in_range(self, radius):
         for y in range(-radius, radius+1):
@@ -82,18 +94,24 @@ class Pole(Cell):
         for neighbor in self.in_range(2):
             neighbor.effects.add(self.ns)
 
-
-map = [
-    [
-        Cell(x=x, y=y, character=random.choice([' ']*6 + ['\xb0']*4 + ['\xb1']))
-        for x in range(map_width)
-    ]
-    for y in range(map_height)
-]
-map[0][0] = Pole('northpole', x=0, y=0, character='P')
-map[map_height/2][map_width/2] = Pole('southpole', x=map_width/2, y=map_height/2, character='P')
-
-map_buffer = pytality.buffer.Buffer(width=view_width, height=view_height)
+def prettify_map():
+    #make the map a little prettier
+    #by taking out some jaggy bits
+    #and smoothing the terrain a bit
+    for iteration in range(2):
+        for y in range(map_height):
+            for x in range(map_width):
+                cell = map[y][x]
+                n = get_at(x, y-1)
+                e = get_at(x+1, y)
+                w = get_at(x-1, y)
+                s =  get_at(x, y+1)
+                if(n.character == e.character == w.character == s.character):
+                    cell.character = n.character
+                elif cell.character == '\xb1':
+                    for c in (n,e,w,s):
+                        if c.character == ' ':
+                            c.character = '\xb0'
 
 def update_map():
     #three passes!
@@ -127,6 +145,22 @@ def update_map_buffer():
     map_buffer.dirty = True
 
     #log.debug("map buffer: %r", map_buffer._data)
+
+
+map = [
+    [
+        Cell(x=x, y=y, character=random.choice([' ']*6 + ['\xb0']*4 + ['\xb1']))
+        for x in range(map_width)
+    ]
+    for y in range(map_height)
+]
+
+prettify_map()
+
+map[0][0] = Pole('northpole', x=0, y=0, character='P')
+map[map_height/2][map_width/2] = Pole('southpole', x=map_width/2, y=map_height/2, character='P')
+
+map_buffer = pytality.buffer.Buffer(width=view_width, height=view_height)
 update_map()
 update_map_buffer()
 
