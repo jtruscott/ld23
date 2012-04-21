@@ -3,6 +3,7 @@ import event
 import logging
 import threading
 import time
+import pytality
 
 logic_lock = threading.Lock()
 
@@ -12,9 +13,9 @@ class GameShutdown(Exception):
     pass
 
 mode = "game"
+active_panel = "map"
 
 def start():
-    global mode
     log.debug("Game starting")
 
     lastmode = None
@@ -23,15 +24,21 @@ def start():
     tick_thread.daemon = True
     tick_thread.start()
 
+    run('start')
     while True:
-        time.sleep(1)
+        run('input', pytality.term.getkey())
 
-def tick():
+
+
+def run(event_name, *args):
     global mode
+    with logic_lock:
+        event.fire('%s.%s' % (mode, event_name), *args)
+        event.fire('%s.draw' % mode)
+        pytality.term.flip()
+    
+def tick():
     log.debug("Tick thread started")
     while True:
         time.sleep(1)
-        log.debug("Tick")
-        with logic_lock:
-            event.fire('%s.tick' % mode)
-            event.fire('%s.draw' % mode)
+        run('tick')

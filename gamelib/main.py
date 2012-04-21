@@ -6,7 +6,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-screen_width = 120
+screen_width = 100
 screen_height = 80
 
 def main():
