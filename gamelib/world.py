@@ -51,6 +51,7 @@ class Cell(object):
         self.character = character
         self.fg = fg
         self.bg = bg
+        self.baddies = []
 
         #mutable on purpose
         self.cell = [fg, bg, character]
@@ -72,7 +73,10 @@ class Cell(object):
         else:
             self.cell[1] = self.bg
 
-        self.cell[2] = self.character
+        if len(self.baddies):
+            self.cell[2] = 'B'
+        else:
+            self.cell[2] = self.character
 
     def in_range(self, radius):
         for y in range(-radius, radius+1):
@@ -83,6 +87,11 @@ class Cell(object):
                 abs_x = clamp_width(x + self.x)
                 #log.debug('radius: %r, %r', abs_x, abs_y)
                 yield map[abs_y][abs_x]
+
+    def neighbors(self):
+        x = self.x
+        y = self.y
+        return (get_at(x, y-1), get_at(x+1, y), get_at(x-1, y), get_at(x, y+1))
 
 class Pole(Cell):
     def __init__(self, ns, **kwargs):
@@ -108,10 +117,7 @@ def prettify_map(iterations):
         for y in range(map_height):
             for x in range(map_width):
                 cell = map[y][x]
-                n = get_at(x, y-1)
-                e = get_at(x+1, y)
-                w = get_at(x-1, y)
-                s =  get_at(x, y+1)
+                n,e,w,s = cell.neighbors()
                 if(n.character == e.character == w.character == s.character) and n.character != cell.character:
                     #log.debug("prettify, iteration %i, changing cell to %r", iteration, n.character)
                     cell.character = n.character
@@ -166,8 +172,8 @@ map = [
 
 prettify_map(3)
 
-map[0][0] = Pole('northpole', x=0, y=0, character='P')
-map[map_height/2][map_width/2] = Pole('southpole', x=map_width/2, y=map_height/2, character='P')
+north_pole = map[0][0] = Pole('northpole', x=0, y=0, character='P')
+south_pole = map[map_height/2][map_width/2] = Pole('southpole', x=map_width/2, y=map_height/2, character='P')
 
 map_buffer = pytality.buffer.Buffer(width=view_width, height=view_height)
 update_map()
