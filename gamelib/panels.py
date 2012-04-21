@@ -57,18 +57,38 @@ def make_option_label(name, value, active=False, selected=False, **kwargs):
     return panel
 
 highlight_buffer = pytality.buffer.Buffer(0, 0)
-bottom_buffer = pytality.buffer.Buffer(0, 0)
+info_buffer = pytality.buffer.Buffer(width=main.screen_width - world.view_width - 4, height=main.screen_height-46)
+bottom_buffer = pytality.buffer.Buffer(width=main.screen_width - world.view_width - 4, height=40)
 
-left_panel = make_panel('left', width=main.screen_width - world.view_width - 4, height=main.screen_height-44,  core=pytality.buffer.Buffer(0, 0), title="Left!")
+left_panel = make_panel('left', width=main.screen_width - world.view_width - 4, height=main.screen_height-44,  core=info_buffer, title="Info")
 map_panel = make_panel('map', x=left_panel.width, width=world.view_width, height=world.view_height,  core=world.map_buffer, title="Game Map", active=True)
 highlight_panel = make_panel('highlight', x=left_panel.width, y=map_panel.height, height=main.screen_height - map_panel.height-2, width=map_panel.width-2, core=highlight_buffer, title="Highlighting")
-bottom_panel = make_panel('bottom', y=left_panel.height, width=main.screen_width - world.view_width - 4, height=40,  core=bottom_buffer, title="Bottom!")
+bottom_panel = make_panel('bottom', y=left_panel.height, width=bottom_buffer.width, height=bottom_buffer.height, core=bottom_buffer, title="Current Cell")
+
+info_text = pytality.buffer.RichText("%s", x=1, y=5, wrap_to=bottom_buffer.width-1)
+
+cell_special_text = pytality.buffer.RichText("%s", x=1, y=1, wrap_to=bottom_buffer.width-1)
+cell_terrain_text = pytality.buffer.RichText("<DARKGREY>Terrain Type: %s</>", x=1, y=3, wrap_to=bottom_buffer.width-1)
+cell_tower_text = pytality.buffer.RichText("<DARKGREY>Tower: %s</>%s", x=1, y=5, wrap_to=bottom_buffer.width-1)
+cell_tower_info = pytality.buffer.RichText("%s", x=1, y=7, wrap_to=bottom_buffer.width-1)
 
 status_bar = pytality.buffer.PlainText("X: %-4i    Y: %-4i    Time: %s", y=bottom_panel.height-3, x=bottom_panel.width-37)
-bottom_buffer.children.append(status_bar)
 
 @event.on('setup')
 def on_setup():
+    info_buffer.children = [
+        info_text
+    ]
+
+    bottom_buffer.children = [
+        cell_special_text,
+        cell_terrain_text,
+        cell_tower_text,
+        cell_tower_info,
+        status_bar
+    ]
+
+
     highlight_buffer.children = [
         make_option_label("Tower Range", "tower", x=2, y=0, selected=True),
         make_option_label("Enemy Pathfinding", "pathfinding", x=highlight_panel.width-23),
@@ -89,7 +109,41 @@ def on_predraw():
     s.cell[2] = '\xc1'
     w.cell[2] = '\xc3'
 
-    #update status bar
+    #update info panel
+    info_text.format(("""
+<BROWN>Resources: </><YELLOW>$%-8i</>
+
+<DARKGREY>Wave: </>%-4i
+
+<RED>Lives: </><LIGHTRED>%-4i</>
+    """ % (game.money, game.wave, game.lives),))
+
+    #update current-cell panel
+    if cursor_cell == world.north_pole:
+        cell_special_text.format(("<LIGHTRED>North Pole",))
+    elif cursor_cell == world.south_pole:
+        cell_special_text.format(("<LIGHTBLUE>South Pole",))
+    else:
+        cell_special_text.format(('',))
+
+    if cursor_cell.tower:
+        tower = cursor_cell.tower
+        cell_tower_text.format((tower.name, ''))
+        cell_tower_info.format("""<DARKGREY>Range:</> %-2i
+<DARKGREY>Damage:</> %-2i
+<DARKGREY>Speed:</> %-2.1f hits/sec
+
+<DARKGREY>Kills:</> %-3i
+<DARKGREY>Sell Value:</> %-3i
+""" % (tower.range, tower.damage, float(game.fps)/tower.cooldown, tower.kills, tower.cost))
+    else:
+        if cursor_cell.buildable:
+            cell_tower_text.format(("None", " (<GREEN>Buildable</>)"))
+        else:
+            cell_tower_text.format(("None", " (<RED>Not Buildable</>)"))
+        cell_tower_info.format(("                    \n"*8,))
+
+    cell_terrain_text.format(world.cell_names.get(cursor_cell.character, 'Unknown'))
     t = '%3i:%02i' % divmod(game.ticks/game.fps, 60)
     status_bar.format((x, y, t))
 

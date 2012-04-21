@@ -22,6 +22,11 @@ highlights = set(["tower"])
 fps = 10
 ticks = 0
 
+
+wave = 0
+money = 300
+lives = 100
+
 def start():
     log.debug("Game starting")
 

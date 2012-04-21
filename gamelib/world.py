@@ -16,6 +16,13 @@ highlight_colors = dict(
     pathfinding=colors.MAGENTA,
     tower=colors.GREEN
 )
+
+cell_names = {
+    Plain: 'Flat',
+    Hill: 'Rough',
+    Mountain: 'Mountainous',
+    'P': 'Flat',
+}
 map_width = 60
 map_height = 60
 
@@ -62,6 +69,8 @@ class Cell(object):
         #mutable on purpose
         self.cell = [fg, bg, character]
 
+        self.buildable = True
+
         #what effects are going on? (must be recalculatable)
         self.effects = set()
 
@@ -75,6 +84,7 @@ class Cell(object):
         self.tower = None
 
     def reset_effects(self):
+        self.buildable = True
         self.effects = set()
         if not self.in_path_of:
             self.highlights.discard('pathfinding')
@@ -84,6 +94,8 @@ class Cell(object):
             for neighbor in self.in_range(self.tower.range):
                 neighbor.effects.add(self.tower.effect)
                 neighbor.highlights.add('tower')
+            for neighbor in self.in_range(2):
+                neighbor.buildable = False
 
     def calculate_image(self, viewmode=None):
         character = self.character
@@ -131,17 +143,19 @@ class Pole(Cell):
     def __init__(self, ns, **kwargs):
         self.ns = ns
         if ns == 'northpole':
+            kwargs['fg'] = colors.LIGHTMAGENTA
             kwargs['bg'] = colors.LIGHTRED
         else:
+            kwargs['fg'] = colors.LIGHTCYAN
             kwargs['bg'] = colors.LIGHTBLUE
 
-        kwargs['fg'] = colors.WHITE
 
         Cell.__init__(self, **kwargs)
 
     def add_effects(self):
         for neighbor in self.in_range(2):
             neighbor.effects.add(self.ns)
+            neighbor.buildable = False
 
 
 def all_cells():

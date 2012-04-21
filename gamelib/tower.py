@@ -9,13 +9,23 @@ import logging
 log = logging.getLogger(__name__)
 
 class Tower(object):
+    name = "?"
+    base_cooldown = 90
+    base_range = 1
+
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.fire_delay = 5
-        self.range = 2
         self.effect = 'tower'
         self.fg = pytality.colors.DARKGREY
+
+        self.cooldown = self.base_cooldown
+        self.range = self.base_range
+        self.damage = self.base_damage
+
+        self.fire_delay = self.cooldown
+        self.cost = self.base_cost
+        self.kills = 0
 
     def tick(self):
         if self.fire_delay > 0:
@@ -31,24 +41,57 @@ class Tower(object):
                 target = list(neighbor.baddies)[0]
                 log.debug("%r firing at %r on tick %r", self, target, game.ticks)
                 self.fg = pytality.colors.LIGHTGREEN
-                target.take_damage(1)
-                self.fire_delay = 4
+                target.take_damage(self.damage)
+                self.fire_delay = self.cooldown
                 break
+
+class BasicTower(Tower):
+    name = "Basic Tower"
+    base_cooldown = 7
+    base_range = 2
+    base_damage = 2
+    base_cost = 50
+
+
+class LongRangeTower(Tower):
+    name = "Long Range Tower"
+    base_cooldown = 10
+    base_range = 5
+    base_damage = 1
+    base_cost = 75
 
 all_towers = set()
 
 @event.on('game.input')
 def on_input(key):
-    if key == 'T':
+    if key in ('T', 'Y'):
         x,y = world.cursor_pos()
-        t = Tower(x=x, y=y)
-        start = world.get_at(t.x, t.y)
-        start.tower = t
-        all_towers.add(t)
+        start = world.get_at(x, y)
+        if start.tower:
+            event.fire("error", "can't build there")
+            return
+
+        if key == 'T':
+            tower_type = BasicTower
+        else:
+            tower_type = LongRangeTower
+
+        if game.money < tower_type.base_cost:
+            event.fire("error", "can't afford that")
+            return
+
+        game.money -= tower_type.base_cost
+
+        tower = tower_type(x=x, y=y)
+        start.tower = tower
+        all_towers.add(tower)
 
         
 @event.on('game.tick')
 def on_tick():
+    if game.ticks % 10 == 0:
+        game.money += 1
+        
     #can't mutate during iteration
     for tower in list(all_towers):
         tower.tick()

@@ -3,6 +3,7 @@ import event
 import world
 import pytality
 import random
+import game
 import logging
 
 log = logging.getLogger(__name__)
@@ -71,7 +72,7 @@ def aStar(current, end, mover):
                         #don't go over towers, but don't call them full on walls
                         terrainCost += 1000
                     cc = cc.parent
-                    
+
                 tile.H += terrainCost
 
                 if tile not in openSet:
@@ -84,10 +85,11 @@ all_baddies = set()
 
 class Baddie(object):
     speed = 2
+    life_cost = 1
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.health = 3
+        self.health = 10
         self.move_delay = 2
 
         self.tower_avoidance = random.randint(0,4)
@@ -118,6 +120,7 @@ class Baddie(object):
         if len(self.path) <= 1:
             log.debug("got to the target with %r hp", self.health)
             all_baddies.discard(self)
+            game.lives -= self.life_cost
             return
 
         current = self.path[0]
