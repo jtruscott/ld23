@@ -86,11 +86,12 @@ def on_input(key):
         start = world.get_at(b.x, b.y)
         start.baddies = [b]
         for tile in aStar(start, world.north_pole):
-            tile.bg = pytality.colors.MAGENTA
+            tile.highlights.add('pathing_north')
             tile.calculate_image()
         
         for tile in aStar(start, world.south_pole):
-            tile.bg = pytality.colors.CYAN
+            tile.highlights.add('pathing_south')
             tile.calculate_image()
 
+        world.update_map()
         world.update_map_buffer()

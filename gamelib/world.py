@@ -4,6 +4,7 @@ import pytality
 import game
 import random
 import math
+log = logging.getLogger(__name__)
 
 colors = pytality.colors
 
@@ -11,8 +12,10 @@ Plain = ' '
 Hill = '\xb0'
 Mountain = '\xb1'
 
-log = logging.getLogger(__name__)
-
+highlight_colors = dict(
+    pathing_north=colors.MAGENTA,
+    pathing_south=colors.CYAN
+)
 map_width = 60
 map_height = 60
 
@@ -56,6 +59,7 @@ class Cell(object):
         #mutable on purpose
         self.cell = [fg, bg, character]
         self.effects = set()
+        self.highlights = set()
 
     def reset_effects(self):
         self.effects = set()
@@ -66,7 +70,9 @@ class Cell(object):
     def calculate_image(self, viewmode=None):
         self.cell[0] = self.fg
 
-        if 'northpole' in self.effects:
+        if game.highlight_mode in self.highlights:
+            self.cell[1] = highlight_colors[game.highlight_mode]
+        elif 'northpole' in self.effects:
             self.cell[1] = colors.RED
         elif 'southpole' in self.effects:
             self.cell[1] = colors.BLUE
@@ -107,6 +113,12 @@ class Pole(Cell):
         for neighbor in self.in_range(2):
             neighbor.effects.add(self.ns)
 
+
+def all_cells():
+    for col in map:
+        for cell in col:
+            yield cell
+
 def prettify_map(iterations):
     #make the map a little prettier
     #by taking out some jaggy bits
@@ -131,17 +143,23 @@ def prettify_map(iterations):
 def update_map():
     #three passes!
     #this is kinda silly but i'd rather not have bugs from being smart
-    for col in map:
-        for cell in col:
-            cell.reset_effects()
+    for cell in all_cells():
+        cell.reset_effects()
 
-    for col in map:
-        for cell in col:
-            cell.add_effects()
+    for cell in all_cells():
+        cell.add_effects()
 
-    for col in map:
-        for cell in col:
-            cell.calculate_image()
+    for cell in all_cells():
+        cell.calculate_image()
+
+def clear_highlight(type=None):
+    if not type:
+        for cell in all_cells():
+            cell.highlights.clear()
+    else:
+        for cell in all_cells():
+            if type in cell.highlights:
+                cell.highlights.remove(type)
 
 def update_map_buffer():
     log.debug("update_map_buffer: view_x=%r, view_y=%r", view_x, view_y)
@@ -199,6 +217,16 @@ def on_input(key):
         view_x = clamp_width(view_x)
         view_y = clamp_height(view_y)
 
+        update_map_buffer()
+
+    if key in ('n', 's', 'c'):
+        if key == 'n':
+            game.highlight_mode = 'pathing_north'
+        elif key == 's':
+            game.highlight_mode = 'pathing_south'
+        else:
+            clear_highlight()
+        update_map()
         update_map_buffer()
 
     if key == 'R':

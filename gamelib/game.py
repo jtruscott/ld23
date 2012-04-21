@@ -15,6 +15,8 @@ class GameShutdown(Exception):
 mode = "game"
 active_panel = "map"
 
+highlight_mode = "pathing_north"
+
 def start():
     log.debug("Game starting")
 
