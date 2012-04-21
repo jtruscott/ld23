@@ -7,6 +7,10 @@ import math
 
 colors = pytality.colors
 
+Plain = ' '
+Hill = '\xb0'
+Mountain = '\xb1'
+
 log = logging.getLogger(__name__)
 
 map_width = 60
@@ -77,7 +81,7 @@ class Cell(object):
                     continue
                 abs_y = clamp_height(y + self.y)
                 abs_x = clamp_width(x + self.x)
-                log.debug('radius: %r, %r', abs_x, abs_y)
+                #log.debug('radius: %r, %r', abs_x, abs_y)
                 yield map[abs_y][abs_x]
 
 class Pole(Cell):
@@ -94,11 +98,13 @@ class Pole(Cell):
         for neighbor in self.in_range(2):
             neighbor.effects.add(self.ns)
 
-def prettify_map():
+def prettify_map(iterations):
     #make the map a little prettier
     #by taking out some jaggy bits
     #and smoothing the terrain a bit
-    for iteration in range(2):
+
+    #after two iterations, this appears to be idempotent - which is good, as it means we can run it after expanding the world
+    for iteration in range(iterations):
         for y in range(map_height):
             for x in range(map_width):
                 cell = map[y][x]
@@ -106,12 +112,15 @@ def prettify_map():
                 e = get_at(x+1, y)
                 w = get_at(x-1, y)
                 s =  get_at(x, y+1)
-                if(n.character == e.character == w.character == s.character):
+                if(n.character == e.character == w.character == s.character) and n.character != cell.character:
+                    #log.debug("prettify, iteration %i, changing cell to %r", iteration, n.character)
                     cell.character = n.character
-                elif cell.character == '\xb1':
+
+                if cell.character == Mountain:
                     for c in (n,e,w,s):
-                        if c.character == ' ':
-                            c.character = '\xb0'
+                        if c.character == Plain:
+                            #log.debug("prettify, iteration %i, changing cell to Hill", iteration)
+                            c.character = Hill
 
 def update_map():
     #three passes!
@@ -149,13 +158,13 @@ def update_map_buffer():
 
 map = [
     [
-        Cell(x=x, y=y, character=random.choice([' ']*6 + ['\xb0']*4 + ['\xb1']))
+        Cell(x=x, y=y, character=random.choice([Plain]*6 + [Hill]*4 + [Mountain]))
         for x in range(map_width)
     ]
     for y in range(map_height)
 ]
 
-prettify_map()
+prettify_map(3)
 
 map[0][0] = Pole('northpole', x=0, y=0, character='P')
 map[map_height/2][map_width/2] = Pole('southpole', x=map_width/2, y=map_height/2, character='P')
