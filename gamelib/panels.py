@@ -57,17 +57,17 @@ def make_option_label(name, value, active=False, selected=False, **kwargs):
     return panel
 
 highlight_buffer = pytality.buffer.Buffer(0, 0)
-info_buffer = pytality.buffer.Buffer(width=main.screen_width - world.view_width - 4, height=main.screen_height-46)
-bottom_buffer = pytality.buffer.Buffer(width=main.screen_width - world.view_width - 4, height=40)
+info_buffer = pytality.buffer.Buffer(width=main.screen_width - world.view_width - 4, height=main.screen_height-42)
+bottom_buffer = pytality.buffer.Buffer(width=main.screen_width - world.view_width - 4, height=36)
 
-left_panel = make_panel('left', width=main.screen_width - world.view_width - 4, height=main.screen_height-44,  core=info_buffer, title="Info")
+left_panel = make_panel('left', width=main.screen_width - world.view_width - 4, height=main.screen_height-40,  core=info_buffer, title="Info")
 map_panel = make_panel('map', x=left_panel.width, width=world.view_width, height=world.view_height,  core=world.map_buffer, title="Game Map", active=True)
 highlight_panel = make_panel('highlight', x=left_panel.width, y=map_panel.height, height=main.screen_height - map_panel.height-2, width=map_panel.width-2, core=highlight_buffer, title="Highlighting")
 bottom_panel = make_panel('bottom', y=left_panel.height, width=bottom_buffer.width, height=bottom_buffer.height, core=bottom_buffer, title="Current Cell")
 
-info_text = pytality.buffer.RichText("%s", x=1, y=1, wrap_to=info_buffer.width-1)
+info_text = pytality.buffer.RichText("%s", x=1, y=0, wrap_to=info_buffer.width-1)
 
-message_log = pytality.buffer.MessageBox(draw_top=None, draw_left=None, draw_bottom=None, draw_right=None, x=0, y=left_panel.height-18, width=info_buffer.width, height=16)
+message_log = pytality.buffer.MessageBox(draw_top=None, draw_left=None, draw_bottom=None, draw_right=None, x=0, y=left_panel.height-20, width=info_buffer.width, height=18)
 message_title = pytality.buffer.PlainText('Messages:', x=0,y=message_log.y)
 message_log.scroll_cursor = pytality.buffer.NoScrollbar()
 
@@ -125,13 +125,35 @@ def on_predraw():
     w.cell[2] = '\xc3'
 
     #update info panel
+
+    next_wave_timer = ""
+    if game.wave_delay:
+        next_wave_timer = " in <WHITE>%3i:%02i</>"  % divmod(game.wave_delay/game.fps, 60)
+
+    wave_info = ""
+    if not game.wave:
+        wave_info = "\n\nFirst Wave%s\n\n\n" % next_wave_timer
+    else:
+
+        wave_info = """
+<DARKGREY>Wave <WHITE>%4i</><DARKGREY>: <WHITE>%s</>
+        (<WHITE>%i</> Landers, <WHITE>%i</> Units, <WHITE>%i</> HP)</>
+
+<DARKGREY>Next Wave: <LIGHTGREY>%s</>%s
+        (<LIGHTGREY>%i</> Landers, <LIGHTGREY>%i</> Units, <LIGHTGREY>%i</> HP)</>
+""" %   (
+            game.wave, game.wave_type, game.wave_landers, game.wave_units, game.wave_hp,
+            game.next_wave_type, next_wave_timer, game.next_wave_landers, game.next_wave_units, game.next_wave_hp,
+        )
+
     info_text.format(("""
 <BROWN>Resources: </><YELLOW>$%-8i</>
-
-<DARKGREY>Wave: </>%-4i
-
+%s
 <RED>Lives: </><LIGHTRED>%-4i</>
-    """ % (game.money, game.wave, game.lives),))
+    """ % (
+            game.resources,
+            wave_info,
+            game.lives),))
 
     #update current-cell panel
     if cursor_cell == world.north_pole:

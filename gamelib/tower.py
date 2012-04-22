@@ -71,7 +71,7 @@ def on_input(key):
         x,y = world.cursor_pos()
         start = world.get_at(x, y)
         if start.tower:
-            event.fire("error", "Cannot construct tower: Cell already has a tower")
+            event.fire("error", "Cannot construct tower:\nCell already has a tower")
             return
 
         if key == 'T':
@@ -79,14 +79,14 @@ def on_input(key):
         else:
             tower_type = LongRangeTower
 
-        if game.money < tower_type.base_cost:
-            event.fire("error", "Cannot construct tower: Insufficient resources")
+        if game.resources < tower_type.base_cost:
+            event.fire("error", "Cannot construct tower:\nInsufficient resources")
             return
         if not start.buildable:
-            event.fire("error", "Cannot construct tower: Cell is not buildable")
+            event.fire("error", "Cannot construct tower:\nCell is not buildable")
             return
 
-        game.money -= tower_type.base_cost
+        game.resources -= tower_type.base_cost
 
         tower = tower_type(x=x, y=y)
         start.tower = tower
@@ -95,9 +95,6 @@ def on_input(key):
         
 @event.on('game.tick')
 def on_tick():
-    if game.ticks % 10 == 0:
-        game.money += 1
-
     #can't mutate during iteration
     for tower in list(all_towers):
         tower.tick()

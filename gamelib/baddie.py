@@ -100,9 +100,10 @@ all_landers = set()
 min_distance = 20
 
 class Lander(object):
-    def __init__(self, x, y, children=None):
+    def __init__(self, x, y, hp, children=None):
         self.x = x
         self.y = y
+        self.hp = hp
         self.children = children
         if children:
             self.delay = 20
@@ -122,7 +123,7 @@ class Lander(object):
             self.character = Pod3
         elif self.delay <= 0:
             #landed!
-            spawn_at(self.x, self.y)
+            spawn_at(self.x, self.y, self.hp)
             all_landers.discard(self)
         
         if self.children:
@@ -143,7 +144,7 @@ class Lander(object):
                     spot = possible_spots.pop(i)
                     log.debug("landing child at x=%r, y=%r", spot.x, spot.y)
 
-                    lander = Lander(spot.x, spot.y)
+                    lander = Lander(spot.x, spot.y, self.hp)
                     all_landers.add(lander)
                 
 
@@ -151,10 +152,10 @@ class Lander(object):
 class Baddie(object):
     speed = 2
     life_cost = 1
-    def __init__(self, x, y):
+    def __init__(self, x, y, hp):
         self.x = x
         self.y = y
-        self.health = 10
+        self.health = hp
         self.move_delay = 2
 
         self.tower_avoidance = random.randint(0,4)
@@ -211,8 +212,8 @@ class Baddie(object):
             return True
         
 
-def spawn_at(x, y):
-    b = Baddie(x=x, y=y)
+def spawn_at(x, y, hp):
+    b = Baddie(x=x, y=y, hp=hp)
     
     start = world.get_at(b.x, b.y)
     start.baddies.add(b)
@@ -229,17 +230,33 @@ def spawn_at(x, y):
 
 @event.on('game.input')
 def on_input(key):
-    if key == 'W':
-        event.fire('game.nextwave')
+    if key == 'S' and game.wave_delay:
+        event.fire("message", "Skipping wave timer.")
+        game.wave_delay = 1
 
 @event.on('game.tick')
 def on_tick():
+    if game.wave_delay:
+        game.wave_delay -= 1
+        if not game.wave_delay:
+            event.fire('game.nextwave')
+        return
+
+    if not all_landers and not all_baddies:
+        reward = 10*(game.wave+9)
+        game.resources += reward
+        event.fire('message', "Wave Complete! <YELLOW>+$%i</>" % reward)
+        game.wave_delay =  game.fps * 60
+        return
+
     for lander in list(all_landers):
         lander.tick()
 
     #can't mutate during iteration
     for baddie in list(all_baddies):
         baddie.move()
+
+
 
 @event.on('game.predraw')
 def on_predraw():
@@ -251,12 +268,15 @@ def on_predraw():
 
 @event.on('game.nextwave')
 def on_nextwave():
+    game.calc_next_wave()
+
     wave = game.wave
-    clusters = 2
-    units = 3
+    landers = game.wave_landers
+    units = game.wave_units
+    hp = game.wave_hp
 
     existing_clusters = []
-    for cluster in range(clusters):
+    for cluster in range(landers):
         for _ in range(30):
             x = random.randint(0, world.map_width)
             y = random.randint(0, world.map_height)
@@ -276,7 +296,7 @@ def on_nextwave():
         #if it didn't find anything we still have an x/y, it's just kinda cheating, but failing 30 tries is absurd
         log.debug("landing at x=%r, y=%r after %r tries", x, y, _)
 
-        lander = Lander(x, y, children=units-1)
+        lander = Lander(x, y, hp=hp, children=units-1)
         all_landers.add(lander)
     
-    wave += 1
+    

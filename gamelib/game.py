@@ -24,8 +24,43 @@ ticks = 0
 
 
 wave = 0
-money = 300
+wave_delay = fps * 90
+
+next_wave_type = "Normal"
+next_wave_hp = 4
+next_wave_landers = 2
+next_wave_units = 2
+
+resources = 400
 lives = 100
+
+def calc_next_wave():
+    global wave, wave_landers, wave_units, wave_hp, wave_type
+    global next_wave_type, next_wave_landers, next_wave_units, next_wave_hp
+    wave += 1
+    log.debug("Next wave is %i", wave)
+    wave_type = next_wave_type
+    wave_hp = next_wave_hp
+    wave_landers = next_wave_landers
+    wave_units = next_wave_units
+
+    if wave % 10 == 0:
+        next_wave_type = 'Swarm'
+        next_wave_hp = 4 + wave/4
+        next_wave_landers = 2 + wave
+        next_wave_units = 1
+
+    elif wave % 10 == 5:
+        next_wave_type = 'Cluster'
+        next_wave_hp = 4 + wave/2
+        next_wave_landers = 2 + wave/8
+        next_wave_units = 2 + wave/4
+
+    else:
+        next_wave_type = 'Normal'
+        next_wave_hp = 4 + wave/2
+        next_wave_landers = 2 + wave/5
+        next_wave_units = 2 + wave/10
 
 def start():
     log.debug("Game starting")
