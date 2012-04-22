@@ -4,6 +4,7 @@ import pytality
 import game
 import random
 import math
+import time
 log = logging.getLogger(__name__)
 
 colors = pytality.colors
@@ -12,6 +13,7 @@ Plain = ' '
 Hill = '\xb0'
 Mountain = '\xb1'
 
+terrain_weights = [Plain]*6 + [Hill]*4 + [Mountain]
 highlight_colors = dict(
     pathfinding=colors.MAGENTA,
     tower=colors.GREEN
@@ -70,6 +72,7 @@ class Cell(object):
         self.cell = [fg, bg, character]
 
         self.buildable = True
+        self.smoothed = False
 
         #what effects are going on? (must be recalculatable)
         self.effects = set()
@@ -167,7 +170,7 @@ def all_cells():
         for cell in col:
             yield cell
 
-def prettify_map(iterations):
+def prettify_map(iterations, lazy=False):
     #make the map a little prettier
     #by taking out some jaggy bits
     #and smoothing the terrain a bit
@@ -177,6 +180,9 @@ def prettify_map(iterations):
         for y in range(map_height):
             for x in range(map_width):
                 cell = map[y][x]
+                if lazy and cell.smoothed >= iteration:
+                    continue
+                cell.smoothed = iteration
                 n,e,w,s = cell.neighbors()
                 
                 #poles want to be flat ground
@@ -237,7 +243,7 @@ def update_map_buffer():
 
 map = [
     [
-        Cell(x=x, y=y, character=random.choice([Plain]*6 + [Hill]*4 + [Mountain]))
+        Cell(x=x, y=y, character=random.choice(terrain_weights))
         for x in range(map_width)
     ]
     for y in range(map_height)
@@ -251,12 +257,56 @@ prettify_map(3)
 
 map_buffer = pytality.buffer.Buffer(width=view_width, height=view_height)
     
+def grow_map():
+    #add space to the map!
+    #tiles and towers get updated. However, pathfinding is not, so this should only run between waves.
+    global map_width, map_height
+
+    new_y = random.randint(0, map_height)
+    new_x = random.randint(0, map_width)
+    log.debug("grow_map: new_x=%r, new_y=%r", new_x, new_y)
+
+    start_time = time.time()
+    #add the new cell to each row
+    #don't worry about coordinates, we're about to reindex everything
+    for row in map:
+        new_cell = Cell(x=None, y=None, character=random.choice(terrain_weights))
+        row.insert(new_x, new_cell)
+
+    #add the new row
+    new_row = [Cell(x=None, y=None, character=random.choice(terrain_weights))for _ in range(map_height+1)]
+    map.insert(new_y, new_row)
+    add_time = time.time()
+
+    #reindex
+    for y, row in enumerate(map):
+        for x, cell in enumerate(row):
+            #log.debug("Cell was %r,%r, reindexing as %r, %r", cell.x, cell.y, x, y)
+            cell.x = x
+            cell.y = y
+
+    reindex_time = time.time()
+
+    map_width += 1
+    map_height += 1
+
+    #smooth
+    prettify_map(2, lazy=True)
+    smooth_time = time.time()
+
+    log.debug("grow_map: total took %.2f", smooth_time - start_time)
+    log.debug("grow_map: add took %.2f, reindex took %.2f, smooth took %.2f", add_time - start_time, reindex_time - add_time, smooth_time - reindex_time,)
+
+
 @event.on('game.input')
 def on_input(key):
     global view_x, view_y
 
     if game.active_panel != 'map':
         return
+    
+    if key == 'G':
+        grow_map()
 
     if key in ('left', 'right', 'up', 'down'):
         log.debug("moving offsets")
