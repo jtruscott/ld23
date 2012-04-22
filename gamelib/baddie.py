@@ -193,6 +193,8 @@ class Baddie(object):
             all_baddies.discard(self)
             life_cost = 1 + (game.wave/6)
             game.lives -= life_cost
+            if game.lives <= 0 and game.mode != "defeat":
+                event.fire('defeat')
             event.fire('error', "%i Li%s Lost!" % (life_cost, "fe" if life_cost == 1 else "ves"))
             return
 
