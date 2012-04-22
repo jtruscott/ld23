@@ -10,8 +10,17 @@ log = logging.getLogger(__name__)
 
 class Tower(object):
     name = "?"
-    base_cooldown = 90
+    build_name = "?"
+    base_damage = 1
     base_range = 1
+    base_cooldown = 90
+
+    range_increment = 1
+    range_cost = [100]
+    damage_increment = 1
+    damage_cost = [100]
+    cooldown_reduction = 1
+    cooldown_cost = [100]
 
     def __init__(self, x, y):
         self.x = x
@@ -25,7 +34,13 @@ class Tower(object):
 
         self.fire_delay = self.cooldown
         self.cost = self.base_cost
+        self.value = self.cost * 0.8
         self.kills = 0
+
+        #don't want to update the class here
+        self.range_cost = self.range_cost[:]
+        self.damage_cost = self.damage_cost[:]
+        self.cooldown_cost = self.cooldown_cost[:]
 
     def tick(self):
         if self.fire_delay > 0:
@@ -47,50 +62,138 @@ class Tower(object):
 
                 self.fire_delay = self.cooldown
                 break
+    def upgrade_cost(self, upgrade_type):
+        r = dict(damage=self.damage_cost, range=self.range_cost, speed=self.cooldown_cost)[upgrade_type]
+        if r:
+            return r[0]
+        else:
+            return None
+
+    def upgrade(self, upgrade_type):
+        if upgrade_type == 'damage' and self.damage_cost:
+            cost = self.damage_cost.pop(0)
+            self.damage += self.damage_increment
+
+
+        if upgrade_type == 'range' and self.range_cost:
+            cost = self.range_cost.pop(0)
+            self.range += self.range_increment
+
+        if upgrade_type == 'speed' and self.cooldown_cost:
+            cost = self.cooldown_cost.pop(0)
+            self.damage += self.cooldown_reduction
+
+        game.resources -= cost
+        self.value += cost * 0.8
+
 
 class BasicTower(Tower):
     name = "Basic Tower"
+    build_name = "<WHITE>[B]</>asic Tower"
+    character = "B"
     base_cooldown = 5
-    base_range = 2
+    base_range = 3
     base_damage = 2
     base_cost = 50
 
+    damage_cost = range_cost = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]
+    cooldown_cost = [50, 100]
 
 class LongRangeTower(Tower):
     name = "Long Range Tower"
+    build_name = "<WHITE>[L]</>ong Range Tower"
+    character = "L"
     base_cooldown = 5
-    base_range = 6
+    base_range = 7
     base_damage = 1
     base_cost = 75
+
+    damage_cost = [75, 80, 85, 90, 95, 100, 105, 110, 115, 120]
+    range_cost = [50, 55, 60, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120]
+    cooldown_cost = [75, 150]
+
+class RapidFireTower(Tower):
+    name = "Rapid Fire Tower"
+    build_name = "<WHITE>[R]</>apid Fire Tower"
+    character = "R"
+    base_cooldown = 3
+    base_range = 3
+    base_damage = 2
+    base_cost = 75
+    damage_cost = range_cost = [100, 105, 110, 115, 120, 125, 130, 135, 140, 150]
+    cooldown_cost = [100, 200]
+
+class SniperTower(Tower):
+    name = "Sniper Tower"
+    build_name = "<WHITE>[S]</>niper Tower"
+    character = "S"
+    base_cooldown = 20
+    base_range = 10
+    base_damage = 10
+    base_cost = 200
+
+    damage_increment = 2
+    damage_cost = cooldown_cost = range_cost = [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200]
+
+tower_types = (BasicTower, LongRangeTower, RapidFireTower, SniperTower)
 
 all_towers = set()
 
 @event.on('game.input')
 def on_input(key):
-    if key in ('T', 'Y'):
-        x,y = world.cursor_pos()
-        start = world.get_at(x, y)
-        if start.tower:
-            event.fire("error", "Cannot construct tower:\nCell already has a tower")
-            return
+    x,y = world.cursor_pos()
+    current_cell = world.get_at(x, y)
+    if current_cell.tower:
+        tower = current_cell.tower
+        if key in "DRS":
+            if key == "D":
+                cost = tower.upgrade_cost("damage")
+            elif key == "R":
+                cost = tower.upgrade_cost("range")
+            elif key == "S":
+                cost = tower.upgrade_cost("speed")
+            else:
+                return
+            
+            if cost > game.resources:
+                event.fire("error", "Cannot upgrade tower:\nInsufficient resources")
+                return
+            if key == "D":
+                tower.upgrade("damage")
+                event.fire("message", "Tower Damage upgraded!")
+            elif key == "R":
+                tower.upgrade("range")
+                event.fire("message", "Tower Range upgraded!")
+            elif key == "S":
+                tower.upgrade("speed")
+                event.fire("message", "Tower Speed upgraded!")
 
-        if key == 'T':
-            tower_type = BasicTower
-        else:
-            tower_type = LongRangeTower
+    elif current_cell.buildable:
+        if key in "BLRS":
 
-        if game.resources < tower_type.base_cost:
-            event.fire("error", "Cannot construct tower:\nInsufficient resources")
-            return
-        if not start.buildable:
+            if key == 'B':
+                tower_type = BasicTower
+            elif key == "L":
+                tower_type = LongRangeTower
+            elif key == "R":
+                tower_type = RapidFireTower
+            elif key == "S":
+                tower_type = SniperTower
+
+            if game.resources < tower_type.base_cost:
+                event.fire("error", "Cannot construct tower:\nInsufficient resources")
+                return
+
+            game.resources -= tower_type.base_cost
+
+            tower = tower_type(x=x, y=y)
+            current_cell.tower = tower
+            all_towers.add(tower)
+
+    else:
+        if key in "BLRS":
             event.fire("error", "Cannot construct tower:\nCell is not buildable")
             return
-
-        game.resources -= tower_type.base_cost
-
-        tower = tower_type(x=x, y=y)
-        start.tower = tower
-        all_towers.add(tower)
 
         
 @event.on('game.tick')

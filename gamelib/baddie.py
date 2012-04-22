@@ -232,7 +232,7 @@ def spawn_at(x, y, hp):
 
 @event.on('game.input')
 def on_input(key):
-    if key == 'S' and game.wave_delay:
+    if key == 'K' and game.wave_delay:
         event.fire("message", "Skipping wave timer.")
         game.wave_delay = 1
 
@@ -254,8 +254,8 @@ def on_tick():
         reward = 10*(game.wave+9)
         game.resources += reward
         event.fire('message', "Wave Complete! <YELLOW>+$%i</>" % reward)
-        if wave < 5:
-            event.fire('message', "The world begins to grow")
+        if game.wave < 5:
+            event.fire('message', "The world begins to grow.")
         game.growings = 1 + (game.wave/10)
         return
 

@@ -100,7 +100,7 @@ class Cell(object):
             for neighbor in self.in_range(self.tower.range):
                 neighbor.effects.add(self.tower.effect)
                 neighbor.highlights.add('tower')
-            for neighbor in self.in_range(2):
+            for neighbor in self.in_range(1):
                 neighbor.buildable = False
 
     def calculate_image(self, viewmode=None):
@@ -119,7 +119,7 @@ class Cell(object):
         if self.tower:
             fg = self.tower.fg
             bg = colors.GREEN
-            character = 'T'
+            character = self.tower.character
 
         elif len(self.baddies):
             fg = colors.LIGHTCYAN

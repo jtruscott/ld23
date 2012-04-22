@@ -4,6 +4,7 @@ import event
 import main
 import game
 import world
+from tower import tower_types
 
 import logging
 
@@ -128,23 +129,27 @@ def on_predraw():
 
     next_wave_timer = ""
     if game.wave_delay:
-        next_wave_timer = " in <WHITE>%3i:%02i</>"  % divmod(game.wave_delay/game.fps, 60)
+        next_wave_timer = " in <WHITE>%2i:%02i</>"  % divmod(game.wave_delay/game.fps, 60)
 
     wave_info = ""
     if not game.wave:
-        wave_info = "\n\nFirst Wave%s\n\n\n" % next_wave_timer
+        wave_info = "\n\nFirst Wave%s\n<DARKGREY>Skip countdown with <WHITE>[K]</></>\n" % next_wave_timer
     else:
 
-        wave_info = """
+        if game.wave_delay:
+            wave_info = """
+Skip countdown with <WHITE>[K]</>
+
+"""
+        else:
+            wave_info = """
 <DARKGREY>Wave <WHITE>%4i</><DARKGREY>: <WHITE>%s</>
         (<WHITE>%i</> Landers, <WHITE>%i</> Units, <WHITE>%i</> HP)</>
-
+""" % (game.wave, game.wave_type, game.wave_landers, game.wave_units, game.wave_hp,)
+        wave_info += """
 <DARKGREY>Next Wave: <LIGHTGREY>%s</>%s
         (<LIGHTGREY>%i</> Landers, <LIGHTGREY>%i</> Units, <LIGHTGREY>%i</> HP)</>
-""" %   (
-            game.wave, game.wave_type, game.wave_landers, game.wave_units, game.wave_hp,
-            game.next_wave_type, next_wave_timer, game.next_wave_landers, game.next_wave_units, game.next_wave_hp,
-        )
+""" %   (game.next_wave_type, next_wave_timer, game.next_wave_landers, game.next_wave_units, game.next_wave_hp,)
 
     info_text.format(("""
 <BROWN>Resources: </><YELLOW>$%-8i</>
@@ -166,19 +171,62 @@ def on_predraw():
     if cursor_cell.tower:
         tower = cursor_cell.tower
         cell_tower_text.format((tower.name, ''))
-        cell_tower_info.format("""<DARKGREY>Range:</> %-2i
-<DARKGREY>Damage:</> %-2i
-<DARKGREY>Speed:</> %-2.1f hits/sec
+
+        upgrade_lines = []
+        for upgrade_key, upgrade_type in (("R", "range"), ("D", "damage"), ("S","speed")):
+            upgrade_cost = tower.upgrade_cost(upgrade_type)
+            if upgrade_cost:
+                if upgrade_cost < game.resources:
+                    hotkey_color = "WHITE"
+                    money_color = "YELLOW"
+                else:
+                    hotkey_color = "LIGHTGREY"
+                    money_color = "BROWN"
+
+                if upgrade_key == "S":
+                    value = '%.1f' %  (float(game.fps) / (tower.cooldown - tower.cooldown_reduction))
+                elif upgrade_key == "D":
+                    value = tower.damage + tower.damage_increment
+                else:
+                    value = tower.range + tower.range_increment
+
+                upgrade_lines.append("<DARKGREY>Upgrade <%s>[%s]</>%s to <LIGHTGREY>%s</> (<%s>$%i</>)</>" % (hotkey_color, upgrade_key, upgrade_type[1:], value, money_color, upgrade_cost))
+            else:
+                upgrade_lines.append("<DARKGREY>At maximum upgrade.</>")
+
+        cell_tower_info.format("""<DARKGREY>Range:</> <LIGHTGREY>%-2i</>
+
+<DARKGREY>Damage:</> <LIGHTGREY>%-2i</>
+
+<DARKGREY>Speed:</> <LIGHTGREY>%-2.1f</> hits/sec
+
+
+%s
+%s
+%s
+
+
+
+
 
 <DARKGREY>Kills:</> %-3i
+
 <DARKGREY>Sell Value:</> %-3i
-""" % (tower.range, tower.damage, float(game.fps)/tower.cooldown, tower.kills, tower.cost))
+
+""" % (tower.range, tower.damage, float(game.fps)/tower.cooldown, upgrade_lines[0], upgrade_lines[1], upgrade_lines[2], tower.kills, tower.value))
     else:
         if cursor_cell.buildable:
             cell_tower_text.format(("None", " (<GREEN>Buildable</>)"))
+            tower_descs = ["<DARKGREY>Build:</>\n"]
+            for tower_type in tower_types:
+                tower_descs.append("""%s <DARKGREY>(<%s>$%i</>)
+Damage: %-2i    Range: %-2i
+Speed: %-1.1f hits/sec</>
+""" % (tower_type.build_name, ("YELLOW" if tower_type.base_cost < game.resources else "BROWN"), tower_type.base_cost, tower_type.base_damage, tower_type.base_range,  float(game.fps)/tower_type.base_cooldown))
+            cell_tower_info.format(("\n".join(tower_descs),))
         else:
             cell_tower_text.format(("None", " (<RED>Not Buildable</>)"))
-        cell_tower_info.format(("                    \n"*8,))
+            cell_tower_info.format(("                    \n"*20,))
 
     cell_terrain_text.format(world.cell_names.get(cursor_cell.character, 'Unknown'))
     t = '%3i:%02i' % divmod(game.ticks/game.fps, 60)
