@@ -62,6 +62,9 @@ def calc_next_wave():
         next_wave_hp = 5 + wave/2
         next_wave_landers = 2 + wave/5
         next_wave_units = 2 + wave/10
+    
+    if wave == 31:
+        event.fire('victory')
 
 def start():
     log.debug("Game starting")

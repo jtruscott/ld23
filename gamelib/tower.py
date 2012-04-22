@@ -95,9 +95,9 @@ class BasicTower(Tower):
     build_name = "<WHITE>[B]</>asic Tower"
     character = "B"
     base_cooldown = 5
-    base_range = 4
+    base_range = 3
     base_damage = 2
-    base_cost = 50
+    base_cost = 60
 
     damage_cost = range_cost = [40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90]
     cooldown_cost = [50, 100]
@@ -107,13 +107,13 @@ class LongRangeTower(Tower):
     build_name = "<WHITE>[L]</>ong Range Tower"
     character = "L"
     base_cooldown = 5
-    base_range = 8
-    base_damage = 1
-    base_cost = 75
+    base_range = 6
+    base_damage = 2
+    base_cost = 100
 
     damage_cost = [75, 80, 85, 90, 95, 100, 105, 110, 115, 120]
     range_cost = [50, 55, 60, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120]
-    cooldown_cost = [75, 100, 125]
+    cooldown_cost = [100, 150]
 
 class RapidFireTower(Tower):
     name = "Rapid Fire Tower"
@@ -122,7 +122,7 @@ class RapidFireTower(Tower):
     base_cooldown = 3
     base_range = 3
     base_damage = 2
-    base_cost = 75
+    base_cost = 100
     damage_cost = [100, 105, 110, 115, 120, 125, 130, 135, 140, 150]
     range_cost = [100, 110, 120, 130, 140]
     cooldown_cost = [150]
@@ -138,7 +138,8 @@ class SniperTower(Tower):
 
     damage_increment = 2
     cooldown_reduction = 2
-    damage_cost = cooldown_cost = range_cost = [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200]
+    damage_cost = range_cost = [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200]
+    cooldown_cost = [100, 125, 150, 175, 200]
 
 tower_types = (BasicTower, LongRangeTower, RapidFireTower, SniperTower)
 

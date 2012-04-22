@@ -33,6 +33,9 @@ view_height = map_height
 view_x = 0
 view_y = 0
 
+#there's a much better "zoom effect" if you do stupid things on resize.
+cursor_slop_x = 0
+cursor_slop_y = 0
 def cursor_pos():
     return clamp_width(view_x + (view_width/2)), clamp_height(view_y + (view_height/2))
 
@@ -233,8 +236,8 @@ def update_map_buffer():
     for y in range(view_height):
         row = []
         for x in range(view_width):
-            abs_x = clamp_width(view_x + x)
-            abs_y = clamp_height(view_y + y)
+            abs_x = clamp_width(view_x + x - cursor_slop_x)
+            abs_y = clamp_height(view_y + y - cursor_slop_y)
             cell = map[abs_y][abs_x]
 
             cell.calculate_image()
@@ -268,6 +271,11 @@ def grow_map():
     #add space to the map!
     #tiles and towers get updated. However, pathfinding is not, so this should only run between waves.
     global map_width, map_height
+    global view_x, view_y
+
+    #it's really irritating when the pointer moves out from under you while the map grows
+    original_cursor_x, original_cursor_y = cursor_pos()
+    cursor_tile = get_at(original_cursor_x, original_cursor_y)
 
     new_y = random.randint(0, map_height)
     new_x = random.randint(0, map_width)
@@ -307,6 +315,16 @@ def grow_map():
     #fixup the highlights
     for cell in all_cells():
         cell.highlights.discard('tower')
+
+    #fixup the cursor: if the tile being pointed at shifts, OR the cursor is wrapping around the map, we need to adjust it
+    if cursor_tile.x != original_cursor_x:
+        view_x += 1
+    if cursor_tile.x < view_x:
+        view_x += 1
+    if cursor_tile.y != original_cursor_y:
+        view_y += 1
+    if cursor_tile.y < view_y:
+        view_y += 1
 
     log.debug("grow_map: total took %.2f", smooth_time - start_time)
     log.debug("grow_map: add took %.2f, reindex took %.2f, smooth took %.2f", add_time - start_time, reindex_time - add_time, smooth_time - reindex_time,)
