@@ -45,23 +45,26 @@ def calc_next_wave():
     wave_landers = next_wave_landers
     wave_units = next_wave_units
 
+    #every six waves, things get harder.
+    stage = int(wave/6)
+
     if wave % 6 == 0:
         next_wave_type = 'Swarm'
-        next_wave_hp = 4 + wave/2
-        next_wave_landers = 3 + wave
-        next_wave_units = 1 + wave/10
+        next_wave_hp = 4 + int(wave ** 0.8)
+        next_wave_landers = 4 + int(stage ** 2.3)
+        next_wave_units = 1 + stage
 
     elif wave % 6 == 3:
         next_wave_type = 'Cluster'
-        next_wave_hp = 8 + wave/2
-        next_wave_landers = 2 + wave/8
-        next_wave_units = 4 + wave/4
+        next_wave_hp = 8 + int(wave ** 1.2)
+        next_wave_landers = 2 +  + int(stage ** 1.4)
+        next_wave_units = 3 +  + int(stage ** 1.4)
 
     else:
         next_wave_type = 'Normal'
-        next_wave_hp = 5 + wave/2
-        next_wave_landers = 2 + wave/5
-        next_wave_units = 2 + wave/10
+        next_wave_hp = 5 + wave
+        next_wave_landers = 2 + int(stage ** 1.4)
+        next_wave_units = 1 + stage
     
     if wave == 31:
         event.fire('victory')

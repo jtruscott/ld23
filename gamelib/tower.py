@@ -144,6 +144,7 @@ class SniperTower(Tower):
 tower_types = (BasicTower, LongRangeTower, RapidFireTower, SniperTower)
 
 all_towers = set()
+ordered_towers = list()
 
 @event.on('game.input')
 def on_input(key):
@@ -154,6 +155,7 @@ def on_input(key):
         if key == '$':
             current_cell.tower = None
             all_towers.discard(tower)
+            ordered_towers.remove(tower)
 
             game.resources += tower.value
             event.fire("message", "Tower sold!")
@@ -203,6 +205,7 @@ def on_input(key):
             tower = tower_type(x=x, y=y)
             current_cell.tower = tower
             all_towers.add(tower)
+            ordered_towers.append(tower)
 
     else:
         if key in "blrs":

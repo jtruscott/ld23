@@ -5,6 +5,7 @@ import game
 import random
 import math
 import time
+import tower
 log = logging.getLogger(__name__)
 
 colors = pytality.colors
@@ -329,10 +330,12 @@ def grow_map():
     log.debug("grow_map: total took %.2f", smooth_time - start_time)
     log.debug("grow_map: add took %.2f, reindex took %.2f, smooth took %.2f", add_time - start_time, reindex_time - add_time, smooth_time - reindex_time,)
 
-
+cursor_pole = south_pole
+cursor_tower_index = 0
 @event.on('game.input')
 def on_input(key):
     global view_x, view_y
+    global cursor_pole, cursor_tower_index
 
     if game.active_panel != 'map':
         return
@@ -350,6 +353,22 @@ def on_input(key):
 
         view_x = clamp_width(view_x)
         view_y = clamp_height(view_y)
+
+    if key in 'pt':
+        if key == 'p':
+            target = cursor_pole = south_pole if cursor_pole == north_pole else north_pole
+        else:
+            if not tower.ordered_towers:
+                return
+            cursor_tower_index += 1
+            if cursor_tower_index >= len(tower.ordered_towers):
+                cursor_tower_index = 0
+            target = tower.ordered_towers[cursor_tower_index]
+
+        view_x = clamp_width(target.x - (view_width/2))
+        view_y = clamp_height(target.y - (view_height/2))
+
+
 
 @event.on('game.predraw')
 def on_tick():
