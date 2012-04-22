@@ -19,12 +19,13 @@ active_panel = "map"
 
 highlights = set(["tower"])
 
-fps = 10
+fps = 15
 ticks = 0
 
 
 wave = 0
 wave_delay = fps * 90
+growings = 0
 
 next_wave_type = "Normal"
 next_wave_hp = 4
@@ -97,9 +98,9 @@ def tick():
             ticks += 1
 
             sleeping_for = goal - time.time()
-            if sleeping_for < 0.01:
+            if sleeping_for < 0:
                 log.debug("uhoh, lagging, sleeping_for was %r", sleeping_for)
-                sleeping_for = 0.01
+                sleeping_for = 0
             time.sleep(sleeping_for)
 
     except Exception as e:

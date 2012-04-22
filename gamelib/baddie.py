@@ -187,6 +187,7 @@ class Baddie(object):
             log.debug("got to the target with %r hp", self.health)
             all_baddies.discard(self)
             game.lives -= self.life_cost
+            event.fire('error', "Life Lost!")
             return
 
         current = self.path[0]
@@ -209,6 +210,7 @@ class Baddie(object):
 
             self.full_path = self.path = None
             all_baddies.discard(self)
+            game.resources += 5
             return True
         
 
@@ -236,6 +238,12 @@ def on_input(key):
 
 @event.on('game.tick')
 def on_tick():
+    if game.growings:
+        game.growings -= 1
+        world.grow_map()
+        if not game.growings:
+            game.wave_delay =  game.fps * 60
+        return
     if game.wave_delay:
         game.wave_delay -= 1
         if not game.wave_delay:
@@ -246,7 +254,9 @@ def on_tick():
         reward = 10*(game.wave+9)
         game.resources += reward
         event.fire('message', "Wave Complete! <YELLOW>+$%i</>" % reward)
-        game.wave_delay =  game.fps * 60
+        if wave < 5:
+            event.fire('message', "The world begins to grow")
+        game.growings = 1 + (game.wave/10)
         return
 
     for lander in list(all_landers):

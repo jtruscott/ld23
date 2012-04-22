@@ -211,9 +211,6 @@ def update_map():
     for cell in all_cells():
         cell.add_effects()
 
-    for cell in all_cells():
-        cell.calculate_image()
-
 def clear_highlight(type=None):
     if not type:
         for cell in all_cells():
@@ -231,6 +228,8 @@ def update_map_buffer():
             abs_x = clamp_width(view_x + x)
             abs_y = clamp_height(view_y + y)
             cell = map[abs_y][abs_x]
+
+            cell.calculate_image()
 
             row.append(cell.cell)
         rows.append(row)
@@ -293,6 +292,10 @@ def grow_map():
     #smooth
     prettify_map(2, lazy=True)
     smooth_time = time.time()
+
+    #fixup the highlights
+    for cell in all_cells():
+        cell.highlights.discard('tower')
 
     log.debug("grow_map: total took %.2f", smooth_time - start_time)
     log.debug("grow_map: add took %.2f, reindex took %.2f, smooth took %.2f", add_time - start_time, reindex_time - add_time, smooth_time - reindex_time,)
