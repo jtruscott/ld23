@@ -232,7 +232,7 @@ def spawn_at(x, y, hp):
 
 @event.on('game.input')
 def on_input(key):
-    if key == 'K' and game.wave_delay:
+    if key == 'k' and game.wave_delay:
         event.fire("message", "Skipping wave timer.")
         game.wave_delay = 1
 

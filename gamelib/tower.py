@@ -70,6 +70,7 @@ class Tower(object):
             return None
 
     def upgrade(self, upgrade_type):
+        cost = None
         if upgrade_type == 'damage' and self.damage_cost:
             cost = self.damage_cost.pop(0)
             self.damage += self.damage_increment
@@ -81,8 +82,10 @@ class Tower(object):
 
         if upgrade_type == 'speed' and self.cooldown_cost:
             cost = self.cooldown_cost.pop(0)
-            self.damage += self.cooldown_reduction
+            self.cooldown -= self.cooldown_reduction
 
+        if not cost:
+            return
         game.resources -= cost
         self.value += cost * 0.8
 
@@ -133,6 +136,7 @@ class SniperTower(Tower):
     base_cost = 200
 
     damage_increment = 2
+    speed_increment = 2
     damage_cost = cooldown_cost = range_cost = [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200]
 
 tower_types = (BasicTower, LongRangeTower, RapidFireTower, SniperTower)
@@ -145,12 +149,12 @@ def on_input(key):
     current_cell = world.get_at(x, y)
     if current_cell.tower:
         tower = current_cell.tower
-        if key in "DRS":
-            if key == "D":
+        if key in "drs":
+            if key == "d":
                 cost = tower.upgrade_cost("damage")
-            elif key == "R":
+            elif key == "r":
                 cost = tower.upgrade_cost("range")
-            elif key == "S":
+            elif key == "s":
                 cost = tower.upgrade_cost("speed")
             else:
                 return
@@ -158,26 +162,26 @@ def on_input(key):
             if cost > game.resources:
                 event.fire("error", "Cannot upgrade tower:\nInsufficient resources")
                 return
-            if key == "D":
+            if key == "d":
                 tower.upgrade("damage")
                 event.fire("message", "Tower Damage upgraded!")
-            elif key == "R":
+            elif key == "r":
                 tower.upgrade("range")
                 event.fire("message", "Tower Range upgraded!")
-            elif key == "S":
+            elif key == "s":
                 tower.upgrade("speed")
                 event.fire("message", "Tower Speed upgraded!")
 
     elif current_cell.buildable:
-        if key in "BLRS":
+        if key in "blrs":
 
-            if key == 'B':
+            if key == 'b':
                 tower_type = BasicTower
-            elif key == "L":
+            elif key == "l":
                 tower_type = LongRangeTower
-            elif key == "R":
+            elif key == "r":
                 tower_type = RapidFireTower
-            elif key == "S":
+            elif key == "s":
                 tower_type = SniperTower
 
             if game.resources < tower_type.base_cost:
@@ -191,7 +195,7 @@ def on_input(key):
             all_towers.add(tower)
 
     else:
-        if key in "BLRS":
+        if key in "blrs":
             event.fire("error", "Cannot construct tower:\nCell is not buildable")
             return
 

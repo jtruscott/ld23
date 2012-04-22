@@ -74,7 +74,9 @@ def start():
 
     run('start')
     while True:
-        run('input', pytality.term.getkey())
+        k = pytality.term.getkey()
+        if k:
+            run('input', k.lower())
 
 
 

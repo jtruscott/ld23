@@ -307,9 +307,6 @@ def on_input(key):
 
     if game.active_panel != 'map':
         return
-    
-    if key == 'G':
-        grow_map()
 
     if key in ('left', 'right', 'up', 'down'):
         log.debug("moving offsets")
