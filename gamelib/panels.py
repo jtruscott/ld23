@@ -133,12 +133,12 @@ def on_predraw():
 
     wave_info = ""
     if not game.wave:
-        wave_info = "\n\nFirst Wave%s\n<DARKGREY>Skip countdown with <WHITE>[K]</></>\n" % next_wave_timer
+        wave_info = "\n\nFirst Wave%s\n<DARKGREY>Skip countdown with <WHITE>[ESC]</></>\n" % next_wave_timer
     else:
 
         if game.wave_delay:
             wave_info = """
-Skip countdown with <WHITE>[K]</>
+Skip countdown with <WHITE>[ESC]</>
 
 """
         else:
@@ -208,10 +208,9 @@ Skip countdown with <WHITE>[K]</>
 
 
 
-
 <DARKGREY>Kills:</> %-3i
 
-<DARKGREY>Sell Value:</> %-3i
+<DARKGREY>Sell Value <WHITE>[<YELLOW>$</>]</>:</> %-3i
 
 """ % (tower.range, tower.damage, float(game.fps)/tower.cooldown, upgrade_lines[0], upgrade_lines[1], upgrade_lines[2], tower.kills, tower.value))
     else:

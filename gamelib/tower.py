@@ -149,6 +149,14 @@ def on_input(key):
     current_cell = world.get_at(x, y)
     if current_cell.tower:
         tower = current_cell.tower
+        if key == '$':
+            current_cell.tower = None
+            all_towers.discard(tower)
+            
+            game.resources += tower.value
+            event.fire("message", "Tower sold!")
+            return
+
         if key in "drs":
             if key == "d":
                 cost = tower.upgrade_cost("damage")

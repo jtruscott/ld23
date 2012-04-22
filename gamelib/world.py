@@ -92,6 +92,7 @@ class Cell(object):
     def reset_effects(self):
         self.buildable = True
         self.effects = set()
+        self.highlights.discard('tower')
         if not self.in_path_of:
             self.highlights.discard('pathfinding')
 
@@ -122,8 +123,15 @@ class Cell(object):
             character = self.tower.character
 
         elif len(self.baddies):
-            fg = colors.LIGHTCYAN
-            character = 'E'
+            if game.wave_type == 'Swarm':
+                fg = colors.LIGHTMAGENTA
+                character = '\x88'
+            elif game.wave_type == 'Cluster':
+                fg = colors.YELLOW
+                character = '\x8A'
+            else:
+                fg = colors.LIGHTCYAN
+                character = '\x89'
 
         
         self.cell[0] = fg
@@ -283,6 +291,9 @@ def grow_map():
             #log.debug("Cell was %r,%r, reindexing as %r, %r", cell.x, cell.y, x, y)
             cell.x = x
             cell.y = y
+            if cell.tower:
+                cell.tower.x = x
+                cell.tower.y = y
 
     reindex_time = time.time()
 

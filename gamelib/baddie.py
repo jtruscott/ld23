@@ -45,8 +45,8 @@ def aStar(current, end, mover):
     #super arbitrary
     terrainCosts = {
         world.Plain: 0,
-        world.Hill: 5,
-        world.Mountain: 10
+        world.Hill: 6,
+        world.Mountain: 12
     }
 
     #cutoff the path ends
@@ -150,7 +150,7 @@ class Lander(object):
 
 
 class Baddie(object):
-    speed = 2
+    speed = 5-1
     life_cost = 1
     def __init__(self, x, y, hp):
         self.x = x
@@ -177,11 +177,17 @@ class Baddie(object):
         if self.move_delay > 0: 
             return
 
-        self.move_delay = self.speed
 
         leaving = self.path.pop(0)
         leaving.in_path_of.discard(self)
         leaving.baddies.discard(self)
+        
+        self.move_delay = self.speed
+        if leaving.character == world.Hill:
+            self.move_delay += 3
+        if leaving.character == world.Mountain:
+            self.move_delay += 6
+
 
         if len(self.path) <= 1:
             log.debug("got to the target with %r hp", self.health)
@@ -232,7 +238,7 @@ def spawn_at(x, y, hp):
 
 @event.on('game.input')
 def on_input(key):
-    if key == 'k' and game.wave_delay:
+    if key == '\x1b' and game.wave_delay:
         event.fire("message", "Skipping wave timer.")
         game.wave_delay = 1
 
@@ -274,7 +280,12 @@ def on_predraw():
         cell = world.get_at(lander.x, lander.y)
         if lander.character:
             cell.cell[2] = lander.character
-            cell.cell[0] = pytality.colors.LIGHTCYAN
+            if game.wave_type == 'Swarm':
+                cell.cell[0] = pytality.colors.LIGHTMAGENTA
+            elif game.wave_type == 'Cluster':
+                cell.cell[0] = pytality.colors.YELLOW
+            else:
+                cell.cell[0] = pytality.colors.LIGHTCYAN
 
 @event.on('game.nextwave')
 def on_nextwave():

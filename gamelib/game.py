@@ -45,21 +45,21 @@ def calc_next_wave():
     wave_landers = next_wave_landers
     wave_units = next_wave_units
 
-    if wave % 10 == 0:
+    if wave % 6 == 0:
         next_wave_type = 'Swarm'
-        next_wave_hp = 4 + wave/3
-        next_wave_landers = 2 + wave
+        next_wave_hp = 4 + wave/2
+        next_wave_landers = 3 + wave
         next_wave_units = 1 + wave/10
 
-    elif wave % 10 == 5:
+    elif wave % 6 == 3:
         next_wave_type = 'Cluster'
-        next_wave_hp = 4 + wave/2
+        next_wave_hp = 8 + wave/2
         next_wave_landers = 2 + wave/8
-        next_wave_units = 3 + wave/4
+        next_wave_units = 4 + wave/4
 
     else:
         next_wave_type = 'Normal'
-        next_wave_hp = 4 + wave/2
+        next_wave_hp = 5 + wave/2
         next_wave_landers = 2 + wave/5
         next_wave_units = 2 + wave/10
 
