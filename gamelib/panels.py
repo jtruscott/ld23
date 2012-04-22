@@ -121,11 +121,11 @@ Skip countdown with <WHITE>[ESC]</>
         else:
             wave_info = """
 <DARKGREY>Wave <WHITE>%4i</><DARKGREY>: <WHITE>%s</>
-        (<WHITE>%i</> Landers, <WHITE>%i</> Units, <WHITE>%i</> HP)</>
+       (<WHITE>%i</> Landers, <WHITE>%i</> Units, <WHITE>%i</> HP)</>
 """ % (game.wave, game.wave_type, game.wave_landers, game.wave_units, game.wave_hp,)
         wave_info += """
 <DARKGREY>Next Wave: <LIGHTGREY>%s</>%s
-        (<LIGHTGREY>%i</> Landers, <LIGHTGREY>%i</> Units, <LIGHTGREY>%i</> HP)</>
+       (<LIGHTGREY>%i</> Landers, <LIGHTGREY>%i</> Units, <LIGHTGREY>%i</> HP)</>
 """ %   (game.next_wave_type, next_wave_timer, game.next_wave_landers, game.next_wave_units, game.next_wave_hp,)
 
     info_text.format(("""

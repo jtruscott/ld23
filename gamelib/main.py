@@ -11,7 +11,7 @@ screen_height = 70
 
 def main():
     pytality.term.init(width=screen_width, height=screen_height)
-    pytality.term.set_title('Some Kind Of TD (LD48 #23: Tiny World)')
+    pytality.term.set_title('The Battle Of 35 Leukothea (LD48 #23: Tiny World)')
     pytality.term.clear()
     try:
         event.fire('setup')

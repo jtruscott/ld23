@@ -263,7 +263,7 @@ def on_tick():
         return
 
     if not all_landers and not all_baddies:
-        reward = 10*(game.wave+9)
+        reward = game.reward_factor*(game.wave+9)
         game.resources += reward
         event.fire('message', "Wave Complete! <YELLOW>+$%i</>" % reward)
         if game.wave < 5:

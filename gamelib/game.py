@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 class GameShutdown(Exception):
     pass
 
-mode = "game"
+mode = "title"
 active_panel = "map"
 
 highlights = set(["tower"])
@@ -35,6 +35,11 @@ next_wave_units = 2
 resources = 400
 lives = 100
 
+reward_factor = 10
+mid_power = 1.4
+high_power = 2.3
+low_power = 0.8
+
 def calc_next_wave():
     global wave, wave_landers, wave_units, wave_hp, wave_type
     global next_wave_type, next_wave_landers, next_wave_units, next_wave_hp
@@ -50,20 +55,20 @@ def calc_next_wave():
 
     if wave % 6 == 0:
         next_wave_type = 'Swarm'
-        next_wave_hp = 4 + int(wave ** 0.8)
-        next_wave_landers = 4 + int(stage ** 2.3)
+        next_wave_hp = 4 + int(wave ** low_power)
+        next_wave_landers = 4 + int(stage ** high_power)
         next_wave_units = 1 + stage
 
     elif wave % 6 == 3:
         next_wave_type = 'Cluster'
         next_wave_hp = 8 + int(wave ** 1.2)
-        next_wave_landers = 2 +  + int(stage ** 1.4)
-        next_wave_units = 3 +  + int(stage ** 1.4)
+        next_wave_landers = 2 +  + int(stage ** mid_power)
+        next_wave_units = 3 +  + int(stage ** mid_power)
 
     else:
         next_wave_type = 'Normal'
         next_wave_hp = 5 + wave
-        next_wave_landers = 2 + int(stage ** 1.4)
+        next_wave_landers = 2 + int(stage ** mid_power)
         next_wave_units = 1 + stage
     
     if wave == 31:
