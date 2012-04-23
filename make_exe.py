@@ -1,7 +1,9 @@
 from distutils.core import setup
 import py2exe
 
-setup(console=['run_game.py'], options = {
+setup(console=['run_game.py'],
+    data_files= ['pytality'],
+    options = {
     'py2exe': {
         'bundle_files': 1,
         'compressed': True,
