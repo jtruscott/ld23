@@ -39,8 +39,7 @@ bottom_panel = make_panel('bottom', y=left_panel.height, width=bottom_buffer.wid
 
 info_text = pytality.buffer.RichText("%s", x=1, y=0, wrap_to=info_buffer.width-1)
 
-message_log = pytality.buffer.MessageBox(draw_top=None, draw_left=None, draw_bottom=None, draw_right=None, x=0, y=left_panel.height-20, width=info_buffer.width, height=18)
-message_title = pytality.buffer.PlainText('Messages:', x=0,y=message_log.y)
+message_log = pytality.buffer.MessageBox(draw_top=None, draw_left=None, draw_bottom=None, draw_right=None, x=0, y=left_panel.height-21, width=info_buffer.width, height=19, padding_x=0)
 message_log.scroll_cursor = pytality.buffer.NoScrollbar()
 
 cell_special_text = pytality.buffer.RichText("%s", x=1, y=1, wrap_to=bottom_buffer.width-1)
@@ -55,20 +54,18 @@ highlight_range = True
 highlight_pathfinding = False
 @event.on('error')
 def on_error(msg):
-    message_log.add('<RED>%s</>' % msg)
+    message_log.add('<RED>\x07</>%s' % msg)
 
 @event.on('message')
 def on_error(msg):
-    message_log.add(msg)
+    message_log.add("<GREEN>\x07</>" + msg)
 
 @event.on('setup')
 def on_setup():
     info_buffer.children = [
         info_text,
         message_log,
-        message_title,
     ]
-    message_log.add("Game started")
 
     bottom_buffer.children = [
         cell_special_text,
@@ -83,7 +80,7 @@ def on_setup():
         pytality.buffer.RichText("""
 <WHITE>[1]</>: %s range highlights   <WHITE>[2]</>: %s pathing highlights
 
-<WHITE>[P]</>: Cycle between poles      <WHITE>[T]</>: Cycle between towers
+<WHITE>[P]</>: Cycle between poles     <WHITE>[T]</>: Cycle between towers
 """, x=1, wrap_to=highlight_panel.width-3)
     ]
     highlight_panel.child_index = None
@@ -110,14 +107,14 @@ def on_predraw():
 
     wave_info = ""
     if not game.wave:
-        wave_info = "\n\nFirst Wave%s\n<DARKGREY>Skip countdown with <WHITE>[ESC]</></>\n" % next_wave_timer
+        wave_info = "\n\nFirst Wave%s\n<WHITE>[ESC]</>: <DARKGREY>Skip countdown</>\n" % next_wave_timer
     else:
 
         if game.wave_delay:
             wave_info = """
-Skip countdown with <WHITE>[ESC]</>
+<WHITE>[ESC]</>: Skip countdown for Wave %i
 
-"""
+""" % (game.wave+1)
         else:
             wave_info = """
 <DARKGREY>Wave <WHITE>%4i</><DARKGREY>: <WHITE>%s</>
@@ -153,7 +150,7 @@ Skip countdown with <WHITE>[ESC]</>
         for upgrade_key, upgrade_type in (("R", "range"), ("D", "damage"), ("S","speed")):
             upgrade_cost = tower.upgrade_cost(upgrade_type)
             if upgrade_cost:
-                if upgrade_cost < game.resources:
+                if upgrade_cost <= game.resources:
                     hotkey_color = "WHITE"
                     money_color = "YELLOW"
                 else:
@@ -161,7 +158,7 @@ Skip countdown with <WHITE>[ESC]</>
                     money_color = "BROWN"
 
                 if upgrade_key == "S":
-                    value = '%.1f' %  (float(game.fps) / (tower.cooldown - tower.cooldown_reduction))
+                    value = '%.1f' %  (float(game.fps) / (1 + tower.cooldown - tower.cooldown_reduction))
                 elif upgrade_key == "D":
                     value = tower.damage + tower.damage_increment
                 else:
@@ -169,7 +166,7 @@ Skip countdown with <WHITE>[ESC]</>
 
                 upgrade_lines.append("<DARKGREY>Upgrade <%s>[%s]</>%s to <LIGHTGREY>%s</> (<%s>$%i</>)</>" % (hotkey_color, upgrade_key, upgrade_type[1:], value, money_color, upgrade_cost))
             else:
-                upgrade_lines.append("<DARKGREY>At maximum upgrade.</>")
+                upgrade_lines.append("<DARKGREY>At maximum %s upgrade.</>" % upgrade_type)
 
         cell_tower_info.format("""<DARKGREY>Range:</> <LIGHTGREY>%-2i</>
 
@@ -189,7 +186,7 @@ Skip countdown with <WHITE>[ESC]</>
 
 <DARKGREY>Sell Value <WHITE>[<YELLOW>$</>]</>:</> %-3i
 
-""" % (tower.range, tower.damage, float(game.fps)/tower.cooldown, upgrade_lines[0], upgrade_lines[1], upgrade_lines[2], tower.kills, tower.value))
+""" % (tower.range, tower.damage, float(game.fps)/(1+tower.cooldown), upgrade_lines[0], upgrade_lines[1], upgrade_lines[2], tower.kills, tower.value))
     else:
         if cursor_cell.buildable:
             cell_tower_text.format(("None", " (<GREEN>Buildable</>)"))
@@ -198,7 +195,7 @@ Skip countdown with <WHITE>[ESC]</>
                 tower_descs.append("""%s <DARKGREY>(<%s>$%i</>)
 Damage: %-2i    Range: %-2i
 Speed: %-1.1f hits/sec</>
-""" % (tower_type.build_name, ("YELLOW" if tower_type.base_cost < game.resources else "BROWN"), tower_type.base_cost, tower_type.base_damage, tower_type.base_range,  float(game.fps)/tower_type.base_cooldown))
+""" % (tower_type.build_name, ("YELLOW" if tower_type.base_cost < game.resources else "BROWN"), tower_type.base_cost, tower_type.base_damage, tower_type.base_range,  float(game.fps)/(1+tower_type.base_cooldown)))
             cell_tower_info.format(("\n".join(tower_descs),))
         else:
             cell_tower_text.format(("None", " (<RED>Not Buildable</>)"))

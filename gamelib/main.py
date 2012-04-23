@@ -1,16 +1,19 @@
 import pytality
 import event
 import game
-
+import sys
 import logging
-
+logging.disable(logging.DEBUG)
 log = logging.getLogger(__name__)
 
 screen_width = 100
 screen_height = 70
 
 def main():
-    pytality.term.init(width=screen_width, height=screen_height)
+    if len(sys.argv) > 1:
+        pytality.term.init(backends=sys.argv[1:], width=screen_width, height=screen_height)
+    else:
+        pytality.term.init(width=screen_width, height=screen_height)
     pytality.term.set_title('The Battle Of 35 Leukothea (LD48 #23: Tiny World)')
     pytality.term.clear()
     try:

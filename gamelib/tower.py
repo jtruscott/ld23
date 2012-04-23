@@ -137,9 +137,9 @@ class SniperTower(Tower):
     base_cost = 200
 
     damage_increment = 2
-    cooldown_reduction = 2
+    cooldown_reduction = 3
     damage_cost = range_cost = [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200]
-    cooldown_cost = [100, 125, 150, 175, 200]
+    cooldown_cost = [100, 150, 200]
 
 tower_types = (BasicTower, LongRangeTower, RapidFireTower, SniperTower)
 
@@ -172,7 +172,7 @@ def on_input(key):
                 return
             
             if cost > game.resources:
-                event.fire("error", "Cannot upgrade tower:\nInsufficient resources")
+                event.fire("error", "Cannot upgrade tower:\n Insufficient resources")
                 return
             if key == "d":
                 tower.upgrade("damage")
@@ -197,7 +197,7 @@ def on_input(key):
                 tower_type = SniperTower
 
             if game.resources < tower_type.base_cost:
-                event.fire("error", "Cannot construct tower:\nInsufficient resources")
+                event.fire("error", "Cannot construct tower:\n Insufficient resources")
                 return
 
             game.resources -= tower_type.base_cost
@@ -209,7 +209,7 @@ def on_input(key):
 
     else:
         if key in "blrs":
-            event.fire("error", "Cannot construct tower:\nCell is not buildable")
+            event.fire("error", "Cannot construct tower:\n Cell is not buildable")
             return
 
         

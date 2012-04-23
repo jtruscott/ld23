@@ -57,7 +57,7 @@ def calc_next_wave():
         next_wave_type = 'Swarm'
         next_wave_hp = 4 + int(wave ** low_power)
         next_wave_landers = 4 + int(stage ** high_power)
-        next_wave_units = 1 + stage
+        next_wave_units = 1 + int(stage ** low_power)
 
     elif wave % 6 == 3:
         next_wave_type = 'Cluster'
